@@ -30,7 +30,7 @@ variable "admin_username" {
 variable "github_repo_url" {
   type        = string
   description = "The GitHub repository URL of this demo project."
-  default     = "https://github.com/cb-davidelliott/demo-couchbase-kafka-otel.git"
+  default     = "https://github.com/cb-davidelliott/demo-couchbase-kafka-correlation-ui.git"
 }
 
 variable "couchbase_conn_str" {
@@ -187,5 +187,4 @@ variable "generator_incident_id" {
 variable "generator_random_seed" {
   type        = string
   description = "Optional random seed for repeatable generated data."
-  default     = ""
-}
+  default     =

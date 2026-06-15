@@ -53,8 +53,8 @@ Windows:
 
 ```powershell
 cd C:\your-git-repos
-git clone https://github.com/cb-davidelliott/demo-couchbase-kafka-otel.git
-cd demo-couchbase-kafka-otel
+git clone https://github.com/cb-davidelliott/demo-couchbase-kafka-correlation-ui.git
+cd demo-couchbase-kafka-correlation-ui
 ```
 
 macOS/Linux:
@@ -62,8 +62,8 @@ macOS/Linux:
 ```bash
 mkdir -p ~/git
 cd ~/git
-git clone https://github.com/cb-davidelliott/demo-couchbase-kafka-otel.git
-cd demo-couchbase-kafka-otel
+git clone https://github.com/cb-davidelliott/demo-couchbase-kafka-correlation-ui.git
+cd demo-couchbase-kafka-correlation-ui
 ```
 
 If you already cloned it earlier, update your local copy:
@@ -292,7 +292,7 @@ sudo tail -120 /var/log/cb-connector-setup.log
 ```bash
 curl -s http://localhost:8083/connectors | jq .
 curl -s http://localhost:8083/connectors/couchbase-sink-connector/status | jq .
-```
+````
 
 4. Check generator and connector logs:
 
