@@ -1,0 +1,30 @@
+{
+  "name": "couchbase-sink-connector",
+  "config": {
+    "connector.class": "com.couchbase.connect.kafka.CouchbaseSinkConnector",
+    "tasks.max": "2",
+    "topics": "logs,traces,metrics,customers,orders,support_tickets,accounts,services,incidents,payments,shipments,deployments",
+    "couchbase.seed.nodes": "${env:COUCHBASE_SEED_NODES}",
+    "couchbase.username": "${env:COUCHBASE_USERNAME}",
+    "couchbase.password": "${env:COUCHBASE_PASSWORD}",
+    "couchbase.bucket": "${env:COUCHBASE_BUCKET}",
+    "couchbase.enable.tls": "true",
+    
+    "couchbase.default.collection[logs]": "${env:COUCHBASE_SCOPE}.logs",
+    "couchbase.default.collection[traces]": "${env:COUCHBASE_SCOPE}.traces",
+    "couchbase.default.collection[metrics]": "${env:COUCHBASE_SCOPE}.metrics",
+    "couchbase.default.collection[customers]": "${env:COUCHBASE_SCOPE}.customers",
+    "couchbase.default.collection[orders]": "${env:COUCHBASE_SCOPE}.orders",
+    "couchbase.default.collection[support_tickets]": "${env:COUCHBASE_SCOPE}.support_tickets",
+    "couchbase.default.collection[accounts]": "${env:COUCHBASE_SCOPE}.accounts",
+    "couchbase.default.collection[services]": "${env:COUCHBASE_SCOPE}.services",
+    "couchbase.default.collection[incidents]": "${env:COUCHBASE_SCOPE}.incidents",
+    "couchbase.default.collection[payments]": "${env:COUCHBASE_SCOPE}.payments",
+    "couchbase.default.collection[shipments]": "${env:COUCHBASE_SCOPE}.shipments",
+    "couchbase.default.collection[deployments]": "${env:COUCHBASE_SCOPE}.deployments",
+    
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false"
+  }
+}

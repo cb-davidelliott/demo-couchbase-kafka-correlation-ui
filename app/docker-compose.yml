@@ -1,0 +1,186 @@
+services:
+  # ----------------------------------------------------------------------------
+  # Redpanda (Single-Node Kafka-compatible Message Broker)
+  # ----------------------------------------------------------------------------
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v26.1.9
+    container_name: redpanda
+    command:
+      - redpanda
+      - start
+      - --mode
+      - dev-container
+      - --smp
+      - "1"
+      - --kafka-addr
+      - PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr
+      - PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+      - --pandaproxy-addr
+      - 0.0.0.0:28082
+      - --advertise-pandaproxy-addr
+      - redpanda:28082
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  # ----------------------------------------------------------------------------
+  # Redpanda Console (Web UI for inspecting topics, schemas, and consumer groups)
+  # ----------------------------------------------------------------------------
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:v3.7.3
+    container_name: redpanda-console
+    entrypoint: /bin/sh
+    command: -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+      CONSOLE_CONFIG_FILE: |
+        kafka:
+          brokers: ["redpanda:29092"]
+    ports:
+      - "8080:8080"
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
+  # ----------------------------------------------------------------------------
+  # Kafka Connect (Worker cluster with Couchbase Sink Connector preloaded)
+  # ----------------------------------------------------------------------------
+  kafka-connect:
+    build:
+      context: ./connect
+      dockerfile: Dockerfile
+    container_name: kafka-connect
+    ports:
+      - "127.0.0.1:8083:8083"  # Loopback-only: connector setup runs on the VM; use SSH to reach this port externally
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "redpanda:29092"
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: "cb-demo-connect-group"
+      CONNECT_CONFIG_STORAGE_TOPIC: "cb-demo-connect-configs"
+      CONNECT_OFFSET_STORAGE_TOPIC: "cb-demo-connect-offsets"
+      CONNECT_STATUS_STORAGE_TOPIC: "cb-demo-connect-status"
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "false"
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+      # Single-node configuration overrides (required for Redpanda 1-node setup)
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      # Couchbase credentials (used by connector tasks; password is substituted at registration time)
+      COUCHBASE_CONN_STR: "${COUCHBASE_CONN_STR}"
+      COUCHBASE_SEED_NODES: "${COUCHBASE_SEED_NODES}"
+      COUCHBASE_USERNAME: "${COUCHBASE_USERNAME}"
+      COUCHBASE_PASSWORD: "${COUCHBASE_PASSWORD}"
+      COUCHBASE_BUCKET: "${COUCHBASE_BUCKET}"
+      COUCHBASE_SCOPE: "${COUCHBASE_SCOPE}"
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
+  # ----------------------------------------------------------------------------
+  # Business Event Generator (Python Mock Transaction simulator)
+  # ----------------------------------------------------------------------------
+  event-generator:
+    build:
+      context: ./generator
+      dockerfile: Dockerfile
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: "redpanda:29092"
+      GENERATOR_PROFILE: "${GENERATOR_PROFILE:-demo}"
+      GENERATOR_INTERVAL_SECONDS: "${GENERATOR_INTERVAL_SECONDS:-}"
+      GENERATOR_EVENTS_PER_BATCH: "${GENERATOR_EVENTS_PER_BATCH:-}"
+      GENERATOR_ENABLE_OTEL_CALLS: "${GENERATOR_ENABLE_OTEL_CALLS:-}"
+      GENERATOR_NEW_CUSTOMER_PROBABILITY: "${GENERATOR_NEW_CUSTOMER_PROBABILITY:-}"
+      GENERATOR_TICKET_PROBABILITY: "${GENERATOR_TICKET_PROBABILITY:-}"
+      GENERATOR_ENABLE_METRICS: "${GENERATOR_ENABLE_METRICS:-}"
+      GENERATOR_ENABLE_INCIDENT_UPDATES: "${GENERATOR_ENABLE_INCIDENT_UPDATES:-}"
+      GENERATOR_UNIQUE_METRIC_DOCS: "${GENERATOR_UNIQUE_METRIC_DOCS:-}"
+      GENERATOR_LOG_EVERY_N_EVENTS: "${GENERATOR_LOG_EVERY_N_EVENTS:-}"
+      GENERATOR_FLUSH_EVERY_N_EVENTS: "${GENERATOR_FLUSH_EVERY_N_EVENTS:-}"
+      GENERATOR_INCIDENT_UPDATE_EVERY_N_EVENTS: "${GENERATOR_INCIDENT_UPDATE_EVERY_N_EVENTS:-}"
+      GENERATOR_PRODUCER_LINGER_MS: "${GENERATOR_PRODUCER_LINGER_MS:-}"
+      GENERATOR_PRODUCER_BATCH_NUM_MESSAGES: "${GENERATOR_PRODUCER_BATCH_NUM_MESSAGES:-}"
+      GENERATOR_PRODUCER_QUEUE_MAX_MESSAGES: "${GENERATOR_PRODUCER_QUEUE_MAX_MESSAGES:-}"
+      GENERATOR_PRODUCER_COMPRESSION: "${GENERATOR_PRODUCER_COMPRESSION:-}"
+      GENERATOR_ENTERPRISE_ACCOUNT_COUNT: "${GENERATOR_ENTERPRISE_ACCOUNT_COUNT:-}"
+      GENERATOR_SCENARIO: "${GENERATOR_SCENARIO:-}"
+      GENERATOR_INCIDENT_ID: "${GENERATOR_INCIDENT_ID:-}"
+      GENERATOR_RANDOM_SEED: "${GENERATOR_RANDOM_SEED:-}"
+      OTEL_DEMO_URL: "http://otel-demo:5000"
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      otel-demo:
+        condition: service_started
+
+  # ----------------------------------------------------------------------------
+  # OpenTelemetry Collector (Contrib edition with Kafka exporter enabled)
+  # ----------------------------------------------------------------------------
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.153.0
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP HTTP receiver
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
+  # ----------------------------------------------------------------------------
+  # OpenTelemetry Demo (Flask microservice representing the store system)
+  # ----------------------------------------------------------------------------
+  otel-demo:
+    build:
+      context: ./otel-demo
+      dockerfile: Dockerfile
+    container_name: otel-demo
+    ports:
+      - "5000:5000" # Flask App Port
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+    depends_on:
+      otel-collector:
+        condition: service_started
+
+  # ----------------------------------------------------------------------------
+  # Demo UI Dashboard (React + Node.js Express server query API)
+  # ----------------------------------------------------------------------------
+  demo-ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: demo-ui
+    ports:
+      - "3000:3000" # React UI accessible externally
+    environment:
+      COUCHBASE_CONN_STR: "${COUCHBASE_CONN_STR}"
+      COUCHBASE_USERNAME: "${COUCHBASE_USERNAME}"
+      COUCHBASE_PASSWORD: "${COUCHBASE_PASSWORD}"
+      COUCHBASE_BUCKET: "${COUCHBASE_BUCKET}"
+      COUCHBASE_SCOPE: "${COUCHBASE_SCOPE}"
+      PORT: 3000
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
+
+
+
+
+volumes:
+  redpanda-data:

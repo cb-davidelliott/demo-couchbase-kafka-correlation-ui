@@ -1,0 +1,1853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Couchbase Capella - Observability Demo Dashboard</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel CDN for compiling JSX in browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts Outfit -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+    }
+    body.light-theme {
+      background: #f8fafc;
+      color: #0f172a;
+    }
+    .light-theme .bg-slate-950,
+    .light-theme .bg-slate-950\/30,
+    .light-theme .bg-slate-950\/40,
+    .light-theme .bg-slate-950\/50,
+    .light-theme .bg-slate-900,
+    .light-theme .bg-slate-900\/10,
+    .light-theme .bg-slate-900\/20,
+    .light-theme .bg-slate-900\/30,
+    .light-theme .bg-slate-900\/40,
+    .light-theme .bg-slate-900\/50,
+    .light-theme .bg-slate-900\/60,
+    .light-theme .bg-slate-950\/80 {
+      background-color: #ffffff !important;
+    }
+    .light-theme .bg-slate-800,
+    .light-theme .bg-slate-800\/30 {
+      background-color: #e2e8f0 !important;
+    }
+    .light-theme .border-slate-900,
+    .light-theme .border-slate-900\/60,
+    .light-theme .border-slate-800,
+    .light-theme .border-slate-800\/50,
+    .light-theme .divide-slate-900 > :not([hidden]) ~ :not([hidden]) {
+      border-color: #dbe3ee !important;
+    }
+    .light-theme .text-white,
+    .light-theme .text-slate-100,
+    .light-theme .text-slate-200,
+    .light-theme .text-slate-300,
+    .light-theme .text-transparent {
+      color: #0f172a !important;
+    }
+    .light-theme .text-transparent {
+      background-image: none !important;
+    }
+    .light-theme .text-slate-400 {
+      color: #475569 !important;
+    }
+    .light-theme .text-slate-500,
+    .light-theme .text-slate-600 {
+      color: #64748b !important;
+    }
+    .light-theme .text-slate-800 {
+      color: #cbd5e1 !important;
+    }
+    .light-theme input {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+      border-color: #cbd5e1 !important;
+    }
+    .light-theme input::placeholder {
+      color: #94a3b8 !important;
+    }
+    .light-theme pre {
+      background-color: #f8fafc !important;
+      color: #166534 !important;
+      border-color: #dbe3ee !important;
+    }
+    .light-theme .shadow-indigo-950\/30,
+    .light-theme .shadow-lg,
+    .light-theme .shadow-md {
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #e2e8f0;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#ff3a30', // Couchbase Red
+              dark: '#cc2219'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="light-theme bg-slate-50 text-slate-900 min-h-screen selection:bg-indigo-500/20 selection:text-indigo-900 custom-scrollbar">
+
+  <div id="root"></div>
+
+  <!-- React Code in Babel Script -->
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Component: Header
+    function Header({ onHome }) {
+      return (
+        <header class="sticky top-0 z-50 backdrop-blur-md bg-slate-950/80 border-b border-slate-900 px-6 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-3 cursor-pointer select-none" onClick={onHome}>
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand to-indigo-600 flex items-center justify-center font-bold text-lg shadow-md shadow-brand/20">C</div>
+            <div>
+              <h1 class="text-lg font-semibold tracking-wide bg-gradient-to-r from-slate-100 to-slate-400 bg-clip-text text-transparent">Capella Observability</h1>
+              <p class="text-xs text-slate-500 font-medium tracking-wider uppercase">Event Correlation Engine</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>Capella Online</span>
+            <span class="text-slate-800">|</span>
+            <span class="text-slate-500">Demo Environment v1.0</span>
+          </div>
+        </header>
+      );
+    }
+
+    // Component: Icon Helper
+    function Icon({ name, className }) {
+      useEffect(() => {
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      }, [name]);
+      return <i data-lucide={name} class={className}></i>;
+    }
+
+    // Main App Component
+    function App() {
+      const [searchQuery, setSearchQuery] = useState('');
+      const [searchType, setSearchType] = useState('traceId');
+      const [searchResults, setSearchResults] = useState([]);
+      const [searchAttempted, setSearchAttempted] = useState(false);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState(null);
+      
+      const [currentTraceId, setCurrentTraceId] = useState(null);
+      const [correlationData, setCorrelationData] = useState(null);
+      const [activeTab, setActiveTab] = useState('timeline'); // 'timeline', 'logs', 'raw'
+      const [incidents, setIncidents] = useState([]);
+      const [selectedIncidentId, setSelectedIncidentId] = useState(null);
+      const [incidentSummary, setIncidentSummary] = useState(null);
+      const [incidentLoading, setIncidentLoading] = useState(false);
+      const [timelineData, setTimelineData] = useState(null);
+      const [timelineLoading, setTimelineLoading] = useState(false);
+      const [selectedTimelineEvent, setSelectedTimelineEvent] = useState(null);
+      const [timelineTypeFilter, setTimelineTypeFilter] = useState('all');
+      const [impactView, setImpactView] = useState(null);
+      const [impactLoading, setImpactLoading] = useState(false);
+      const [rootCause, setRootCause] = useState(null);
+      const [rootCauseLoading, setRootCauseLoading] = useState(false);
+      const [workspaceTab, setWorkspaceTab] = useState('command');
+      const [demoRecords, setDemoRecords] = useState(null);
+      const [demoRecordsLoading, setDemoRecordsLoading] = useState(false);
+      const [operatorQueries, setOperatorQueries] = useState([]);
+      const [selectedOperatorQuery, setSelectedOperatorQuery] = useState('collection-health');
+      const [operatorResult, setOperatorResult] = useState(null);
+      const [operatorLoading, setOperatorLoading] = useState(false);
+      const [operatorError, setOperatorError] = useState(null);
+
+      useEffect(() => {
+        loadIncidents();
+        loadDemoRecords();
+        loadOperatorQueries();
+      }, []);
+
+      const formatCurrency = (value) => {
+        const amount = Number(value || 0);
+        return amount.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+      };
+
+      const formatNumber = (value) => Number(value || 0).toLocaleString();
+
+      const formatTime = (value) => {
+        if (!value) return 'N/A';
+        return new Date(value).toLocaleString();
+      };
+
+      const formatMetricValue = (metric) => {
+        const value = Number(metric?.metricValue || 0);
+        const unit = metric?.unit && metric.unit !== '1' ? ` ${metric.unit}` : '';
+        return `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}${unit}`;
+      };
+
+      const summarizeMetricAttributes = (attributes) => {
+        if (!attributes) return '';
+        if (Array.isArray(attributes)) {
+          return attributes
+            .slice(0, 3)
+            .map((attr) => {
+              const value = attr.value?.stringValue || attr.value?.intValue || attr.value?.doubleValue || attr.value?.boolValue;
+              return `${attr.key}=${value}`;
+            })
+            .join(', ');
+        }
+        if (typeof attributes === 'object') {
+          return Object.entries(attributes)
+            .slice(0, 3)
+            .map(([key, value]) => `${key}=${value}`)
+            .join(', ');
+        }
+        return String(attributes);
+      };
+
+      const severityClass = (severity) => {
+        if (severity === 'SEV1') return 'text-red-300 bg-red-500/10 border-red-500/30';
+        if (severity === 'SEV2') return 'text-amber-300 bg-amber-500/10 border-amber-500/30';
+        if (severity === 'SEV3') return 'text-indigo-300 bg-indigo-500/10 border-indigo-500/30';
+        return 'text-slate-300 bg-slate-500/10 border-slate-500/30';
+      };
+
+      const loadIncidents = async () => {
+        try {
+          const res = await fetch('/api/incidents');
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || 'Failed to fetch incidents');
+          }
+          const data = await res.json();
+          setIncidents(data);
+          if (data.length > 0 && !selectedIncidentId) {
+            const preferredIncident = data.find((incident) => incident.incidentId === 'INC-DEMO-001')
+              || data.find((incident) => Number(incident.affectedOrderCount || 0) > 0)
+              || data[0];
+            loadIncidentSummary(preferredIncident.incidentId);
+          }
+        } catch (err) {
+          setError(err.message);
+        }
+      };
+
+      const loadIncidentSummary = async (incidentId) => {
+        setIncidentLoading(true);
+        setSelectedIncidentId(incidentId);
+        setTimelineData(null);
+        setSelectedTimelineEvent(null);
+        setTimelineTypeFilter('all');
+        setImpactView(null);
+        setRootCause(null);
+        setWorkspaceTab('command');
+        setError(null);
+        try {
+          const res = await fetch(`/api/incidents/${encodeURIComponent(incidentId)}/summary`);
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || 'Failed to fetch incident summary');
+          }
+          const data = await res.json();
+          setIncidentSummary(data);
+          loadTimeline({ incidentId });
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setIncidentLoading(false);
+        }
+      };
+
+      const loadRootCause = async (incidentId) => {
+        setRootCauseLoading(true);
+        try {
+          const res = await fetch(`/api/incidents/${encodeURIComponent(incidentId)}/root-cause`);
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || 'Failed to fetch root cause evidence');
+          }
+          const data = await res.json();
+          setRootCause(data);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setRootCauseLoading(false);
+        }
+      };
+
+      const loadDemoRecords = async () => {
+        setDemoRecordsLoading(true);
+        try {
+          const res = await fetch('/api/demo/best-records');
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || 'Failed to fetch recommended demo records');
+          }
+          const data = await res.json();
+          setDemoRecords(data);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setDemoRecordsLoading(false);
+        }
+      };
+
+      useEffect(() => {
+        if (workspaceTab === 'rootCause' && selectedIncidentId && !rootCause && !rootCauseLoading) {
+          loadRootCause(selectedIncidentId);
+        }
+      }, [workspaceTab, selectedIncidentId, rootCause, rootCauseLoading]);
+
+      const loadOperatorQueries = async () => {
+        try {
+          const res = await fetch('/api/operator/queries');
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || 'Failed to fetch operator queries');
+          }
+          const data = await res.json();
+          setOperatorQueries(data.queries || []);
+        } catch (err) {
+          setError(err.message);
+        }
+      };
+
+      const runOperatorQuery = async (queryId = selectedOperatorQuery) => {
+        setSelectedOperatorQuery(queryId);
+        setOperatorResult(null);
+        setOperatorError(null);
+        setOperatorLoading(true);
+        setError(null);
+        try {
+          const params = new URLSearchParams();
+          if (selectedIncidentId) params.set('incidentId', selectedIncidentId);
+          if (demoRecords?.trace?.traceId || demoRecords?.order?.traceId) {
+            params.set('traceId', demoRecords.trace?.traceId || demoRecords.order?.traceId);
+          }
+          if (impactView?.account?.accountId || demoRecords?.account?.accountId) {
+            params.set('accountId', impactView?.account?.accountId || demoRecords.account.accountId);
+          }
+          if (impactView?.customer?.customerId || demoRecords?.customer?.customerId) {
+            params.set('customerId', impactView?.customer?.customerId || demoRecords.customer.customerId);
+          }
+
+          const res = await fetch(`/api/operator/queries/${encodeURIComponent(queryId)}?${params.toString()}`);
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || 'Operator query failed');
+          }
+          const data = await res.json();
+          setOperatorResult(data);
+        } catch (err) {
+          setOperatorError(err.message);
+        } finally {
+          setOperatorLoading(false);
+        }
+      };
+
+      const loadImpactView = async (type, id) => {
+        if (!id) return;
+        setImpactLoading(true);
+        setError(null);
+        try {
+          const endpoint = type === 'account' ? 'accounts' : 'customers';
+          const res = await fetch(`/api/${endpoint}/${encodeURIComponent(id)}/impact`);
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || `Failed to fetch ${type} impact`);
+          }
+          const data = await res.json();
+          setImpactView(data);
+          setWorkspaceTab('business');
+          loadTimeline({ [`${type}Id`]: id });
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setImpactLoading(false);
+        }
+      };
+
+      const openDemoStep = async (tab) => {
+        const records = demoRecords || {};
+        if (tab === 'command') {
+          if (records.incident?.incidentId) {
+            await loadIncidentSummary(records.incident.incidentId);
+          }
+          setWorkspaceTab('command');
+          return;
+        }
+
+        if (tab === 'business') {
+          if (records.account?.accountId) {
+            await loadImpactView('account', records.account.accountId);
+          } else if (records.customer?.customerId) {
+            await loadImpactView('customer', records.customer.customerId);
+          } else {
+            setWorkspaceTab('business');
+          }
+          return;
+        }
+
+        if (tab === 'rootCause' || tab === 'timeline') {
+          if (records.incident?.incidentId && records.incident.incidentId !== selectedIncidentId) {
+            await loadIncidentSummary(records.incident.incidentId);
+          }
+          setWorkspaceTab(tab);
+          return;
+        }
+
+        if (tab === 'trace') {
+          const traceId = records.trace?.traceId || records.order?.traceId;
+          if (traceId) {
+            await loadTrace(traceId);
+          }
+        }
+      };
+
+      const loadTimeline = async (filters) => {
+        setTimelineLoading(true);
+        setSelectedTimelineEvent(null);
+        try {
+          const params = new URLSearchParams();
+          Object.entries(filters).forEach(([key, value]) => {
+            if (value) params.set(key, value);
+          });
+          const res = await fetch(`/api/timeline?${params.toString()}`);
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || 'Failed to fetch investigation timeline');
+          }
+          const data = await res.json();
+          setTimelineData(data);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setTimelineLoading(false);
+        }
+      };
+
+      // Search database
+      const handleSearch = async (e) => {
+        if (e) e.preventDefault();
+        if (!searchQuery.trim()) return;
+
+        setLoading(true);
+        setError(null);
+        setSearchResults([]);
+        setSearchAttempted(true);
+        
+        try {
+          const res = await fetch(`/api/search?query=${encodeURIComponent(searchQuery.trim())}&type=${searchType}`);
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || 'Search request failed');
+          }
+          const data = await res.json();
+          setSearchResults(data);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      // Fetch trace correlation data
+      const loadTrace = async (traceId) => {
+        setLoading(true);
+        setError(null);
+        setCurrentTraceId(traceId);
+        setWorkspaceTab('trace');
+        
+        try {
+          const res = await fetch(`/api/correlation/${traceId}`);
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || 'Failed to fetch correlation timeline');
+          }
+          const data = await res.json();
+          setCorrelationData(data);
+          setActiveTab('timeline');
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const resetApp = () => {
+        setCurrentTraceId(null);
+        setCorrelationData(null);
+        setSearchResults([]);
+        setSearchAttempted(false);
+        setSearchQuery('');
+        setImpactView(null);
+        setRootCause(null);
+        setWorkspaceTab('command');
+        setError(null);
+      };
+
+      const timelineIcon = (type) => {
+        if (type === 'deployment') return 'git-commit';
+        if (type === 'incident') return 'siren';
+        if (type === 'recovery') return 'check-circle';
+        if (type === 'payment') return 'credit-card';
+        if (type === 'shipment') return 'truck';
+        if (type === 'support_ticket') return 'headphones';
+        return 'shopping-cart';
+      };
+
+      const timelineSeverityClass = (severity) => {
+        if (severity === 'ERROR' || severity === 'SEV1') return 'border-red-300 bg-red-50 text-red-700';
+        if (severity === 'WARN' || severity === 'SEV2' || severity === 'SEV3') return 'border-amber-300 bg-amber-50 text-amber-700';
+        return 'border-slate-300 bg-white text-slate-700';
+      };
+
+      const renderImpactView = () => {
+        if (impactLoading) {
+          return (
+            <div class="border border-slate-900 bg-slate-900/20 rounded-xl p-8 flex items-center justify-center gap-3 text-sm text-slate-500">
+              <div class="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+              Loading account/customer impact...
+            </div>
+          );
+        }
+
+        if (!impactView) return null;
+
+        const isAccount = impactView.type === 'account';
+        const profile = isAccount ? impactView.account : impactView.customer;
+        const profileName = profile?.name || profile?.accountId || profile?.customerId || 'Unknown';
+        const profileId = isAccount ? profile?.accountId : profile?.customerId;
+        const action = impactView.recommendedAction || {};
+        const metrics = [
+          { label: 'Orders', value: formatNumber(impactView.orderImpact?.orderCount), icon: 'shopping-cart' },
+          { label: 'Revenue', value: formatCurrency(impactView.orderImpact?.totalOrderValue), icon: 'dollar-sign' },
+          { label: 'Incidents', value: formatNumber(impactView.orderImpact?.incidentCount), icon: 'siren' },
+          { label: 'SLA Risks', value: formatNumber(impactView.ticketImpact?.slaBreachRisks), icon: 'shield-alert' }
+        ];
+
+        return (
+          <section class="border border-indigo-200 bg-white rounded-xl p-5 flex flex-col gap-5 shadow-lg shadow-indigo-950/10">
+            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-indigo-600">{isAccount ? 'Account 360' : 'Customer 360'}</p>
+                <h3 class="text-xl font-bold text-slate-900 mt-1">{profileName}</h3>
+                <p class="text-xs text-slate-500 mt-1">
+                  {profileId} {profile?.industry ? `- ${profile.industry}` : ''} {profile?.slaTier ? `- ${profile.slaTier} SLA` : ''}
+                </p>
+                <div class="flex flex-wrap gap-2 mt-3 text-[11px] text-slate-500">
+                  {profile?.annualRecurringRevenue && <span class="px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">ARR {formatCurrency(profile.annualRecurringRevenue)}</span>}
+                  {profile?.owner && <span class="px-2 py-1 rounded-md bg-slate-50 border border-slate-200">Owner {profile.owner}</span>}
+                  {profile?.accountId && !isAccount && (
+                    <button
+                      onClick={() => loadImpactView('account', profile.accountId)}
+                      class="px-2 py-1 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold"
+                    >
+                      Open account {profile.accountId}
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div class="lg:w-80 border border-amber-200 bg-amber-50 rounded-lg p-4">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-amber-700">{action.priority || 'Recommended Action'}</p>
+                <p class="text-sm font-bold text-slate-900 mt-1">{action.action || 'No action generated yet.'}</p>
+                <p class="text-xs text-slate-600 mt-2">{action.reason}</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {metrics.map((metric) => (
+                <div key={metric.label} class="border border-slate-200 bg-slate-50 rounded-lg p-4">
+                  <Icon name={metric.icon} className="w-4 h-4 text-indigo-500 mb-3" />
+                  <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">{metric.label}</p>
+                  <p class="text-lg font-bold text-slate-900 mt-1">{metric.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {isAccount && (
+                <div class="border border-slate-200 bg-slate-50 rounded-lg p-4">
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Affected Customers</h4>
+                  <p class="text-2xl font-bold text-slate-900 mb-3">{formatNumber(impactView.customerImpact?.customerCount)}</p>
+                  <div class="flex flex-col gap-2">
+                    {(impactView.customerImpact?.sampleCustomers || []).slice(0, 5).map((customer) => (
+                      <button
+                        key={customer.customerId}
+                        onClick={() => loadImpactView('customer', customer.customerId)}
+                        class="text-left text-xs border border-slate-200 bg-white hover:border-indigo-300 rounded-md p-2"
+                      >
+                        <span class="font-bold text-slate-900">{customer.name || customer.customerId}</span>
+                        <span class="block text-slate-500">{customer.customerId} - {customer.slaTier || 'N/A'}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div class="border border-slate-200 bg-slate-50 rounded-lg p-4">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Payments</h4>
+                <div class="flex flex-col gap-2">
+                  {(impactView.paymentImpact || []).length === 0 ? (
+                    <p class="text-xs text-slate-500 italic">No payment records found.</p>
+                  ) : impactView.paymentImpact.map((payment) => (
+                    <div key={payment.authorizationStatus || 'unknown'} class="flex items-center justify-between text-xs">
+                      <span class="font-bold text-slate-700">{payment.authorizationStatus || 'UNKNOWN'}</span>
+                      <span class="text-slate-500">{formatNumber(payment.attempts)} attempts - {payment.avgLatencyMs || 0}ms avg</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div class="border border-slate-200 bg-slate-50 rounded-lg p-4">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Shipments</h4>
+                <div class="flex flex-col gap-2">
+                  {(impactView.shipmentImpact || []).length === 0 ? (
+                    <p class="text-xs text-slate-500 italic">No shipment records found.</p>
+                  ) : impactView.shipmentImpact.map((shipment) => (
+                    <div key={shipment.status || 'unknown'} class="flex items-center justify-between text-xs">
+                      <span class="font-bold text-slate-700">{shipment.status || 'UNKNOWN'}</span>
+                      <span class="text-slate-500">{formatNumber(shipment.shipments)} shipments</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div class="border border-slate-200 bg-slate-50 rounded-lg p-4">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Support</h4>
+                <div class="grid grid-cols-2 gap-3 text-center mb-3">
+                  <div>
+                    <p class="text-lg font-bold text-slate-900">{formatNumber(impactView.ticketImpact?.openTickets)}</p>
+                    <p class="text-[10px] text-slate-500 uppercase">Tickets</p>
+                  </div>
+                  <div>
+                    <p class="text-lg font-bold text-slate-900">{formatNumber(impactView.ticketImpact?.slaBreachRisks)}</p>
+                    <p class="text-[10px] text-slate-500 uppercase">SLA Risk</p>
+                  </div>
+                </div>
+                <div class="flex flex-col gap-2">
+                  {(impactView.ticketImpact?.recentTickets || []).slice(0, 4).map((ticket) => (
+                    <div key={ticket.ticketId} class="text-xs border border-slate-200 bg-white rounded-md p-2">
+                      <p class="font-bold text-slate-900">{ticket.issueType || ticket.ticketId}</p>
+                      <p class="text-slate-500">{ticket.severity || 'N/A'} - {ticket.sentiment || 'unknown'} - {ticket.status || 'N/A'}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div class="border border-slate-200 bg-slate-50 rounded-lg p-4">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">Recent Orders</h4>
+                <span class="text-[10px] text-slate-500">Open trace or switch customer/account context</span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {(impactView.recentOrders || []).length === 0 ? (
+                  <p class="text-xs text-slate-500 italic">No recent orders found.</p>
+                ) : impactView.recentOrders.slice(0, 8).map((order) => (
+                  <div key={order.orderId} class="border border-slate-200 bg-white rounded-lg p-3 text-xs">
+                    <div class="flex items-center justify-between gap-3">
+                      <button onClick={() => loadTrace(order.traceId)} class="font-bold text-indigo-700 hover:text-indigo-500">{order.orderId}</button>
+                      <span class="font-bold text-emerald-700">{formatCurrency(order.totalAmount)}</span>
+                    </div>
+                    <p class="text-slate-500 mt-1">{order.status} - {order.serviceName || 'service'} - {formatTime(order.orderTime)}</p>
+                    <div class="flex flex-wrap gap-2 mt-2">
+                      {order.customerId && (
+                        <button onClick={() => loadImpactView('customer', order.customerId)} class="text-[10px] font-bold text-indigo-700 hover:text-indigo-500">Customer 360</button>
+                      )}
+                      {order.accountId && (
+                        <button onClick={() => loadImpactView('account', order.accountId)} class="text-[10px] font-bold text-indigo-700 hover:text-indigo-500">Account 360</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      };
+
+      const renderRootCauseView = () => {
+        if (rootCauseLoading) {
+          return (
+            <div class="border border-slate-900 bg-slate-900/20 rounded-xl p-5 flex items-center justify-center gap-3 text-sm text-slate-500">
+              <div class="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+              Loading root cause evidence...
+            </div>
+          );
+        }
+
+        if (!rootCause) {
+          return (
+            <div class="border border-slate-900 bg-slate-900/20 rounded-xl p-5 text-xs text-slate-500">
+              Root cause evidence will appear after selecting an incident.
+            </div>
+          );
+        }
+
+        const suspected = rootCause.suspectedService || {};
+        const deployment = suspected.deployment || rootCause.deployments?.[0];
+        const profile = rootCause.suspectedProfile || {};
+        const paymentFailureRate = Number(suspected.paymentAttempts || 0) > 0
+          ? Math.round((Number(suspected.failedPayments || 0) / Number(suspected.paymentAttempts || 1)) * 100)
+          : 0;
+        const evidenceMetrics = [
+          { label: 'Confidence', value: suspected.confidence || 'Unknown' },
+          { label: 'Score', value: formatNumber(suspected.score) },
+          { label: 'Failed Payments', value: formatNumber(suspected.failedPayments) },
+          { label: 'Avg Latency', value: `${formatNumber(suspected.avgLatencyMs)}ms` }
+        ];
+
+        return (
+          <div class="border border-red-200 bg-red-50 rounded-xl p-5 flex flex-col gap-4">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-red-700">Root Cause Evidence</p>
+                <h4 class="text-lg font-bold text-slate-900 mt-1">{suspected.serviceName || 'No suspected service yet'}</h4>
+                <p class="text-xs text-slate-600 mt-1">
+                  {profile.ownerTeam || rootCause.incident?.ownerTeam || 'Unassigned'} - {paymentFailureRate}% payment failure rate - {formatNumber(suspected.slowPayments)} slow payments
+                </p>
+              </div>
+              <span class="px-2 py-1 rounded-md bg-white border border-red-200 text-[10px] font-bold text-red-700">
+                {rootCause.incident?.incidentId}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              {evidenceMetrics.map((metric) => (
+                <div key={metric.label} class="bg-white border border-red-100 rounded-lg p-3">
+                  <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">{metric.label}</p>
+                  <p class="text-sm font-bold text-slate-900 mt-1">{metric.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {deployment && (
+              <div class="bg-white border border-red-100 rounded-lg p-3 text-xs">
+                <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Recent Change</p>
+                <p class="font-bold text-slate-900">{deployment.serviceName} {deployment.version}</p>
+                <p class="text-slate-500 mt-1">{deployment.status || 'UNKNOWN'} - {deployment.changeRisk || 'UNKNOWN'} risk - {formatTime(deployment.timestamp)}</p>
+              </div>
+            )}
+
+            {(rootCause.affectedDownstreamServices || []).length > 0 && (
+              <div class="bg-white border border-red-100 rounded-lg p-3 text-xs">
+                <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">Downstream Dependencies</p>
+                <div class="flex flex-wrap gap-2">
+                  {rootCause.affectedDownstreamServices.map((service) => (
+                    <span key={service} class="px-2 py-1 rounded-md bg-slate-50 border border-slate-200 text-slate-700 font-semibold">{service}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div class="bg-white border border-red-100 rounded-lg p-3">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Representative Failed Traces</p>
+                <span class="text-[10px] text-slate-500">{formatNumber(rootCause.evidenceSummary?.representativeTraceCount)} traces</span>
+              </div>
+              <div class="flex flex-col gap-2">
+                {(rootCause.representativeTraces || []).length === 0 ? (
+                  <p class="text-xs text-slate-500 italic">No failed or slow traces found yet.</p>
+                ) : rootCause.representativeTraces.slice(0, 5).map((trace) => (
+                  <button
+                    key={`${trace.traceId}-${trace.orderId}`}
+                    onClick={() => loadTrace(trace.traceId)}
+                    class="text-left border border-slate-200 hover:border-red-300 rounded-md p-2 text-xs"
+                  >
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="font-mono font-bold text-indigo-700 break-all">{trace.traceId}</span>
+                      <span class="font-bold text-red-700">{trace.latencyMs || 0}ms</span>
+                    </div>
+                    <p class="text-slate-500 mt-1">{trace.authorizationStatus || 'UNKNOWN'} - {trace.declineReason || trace.orderId}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3">
+              <div class="bg-white border border-red-100 rounded-lg p-3">
+                <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">Key Log Lines</p>
+                {(rootCause.keyLogs || []).length === 0 ? (
+                  <p class="text-xs text-slate-500 italic">No correlated logs found for the representative traces yet.</p>
+                ) : rootCause.keyLogs.slice(0, 4).map((log, index) => (
+                  <div key={`${log.traceId}-${index}`} class="text-xs border-t border-slate-100 py-2 first:border-t-0 first:pt-0">
+                    <p class="font-bold text-slate-900">{log.severity || 'INFO'} - {log.logMessage || 'Log event'}</p>
+                    <p class="text-[10px] font-mono text-slate-500 mt-1">{log.traceId}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div class="bg-white border border-red-100 rounded-lg p-3">
+                <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">Slowest Spans</p>
+                {(rootCause.spanEvidence || []).length === 0 ? (
+                  <p class="text-xs text-slate-500 italic">No span evidence found for the representative traces yet.</p>
+                ) : rootCause.spanEvidence.slice(0, 4).map((span) => (
+                  <div key={`${span.traceId}-${span.spanId}`} class="flex items-center justify-between gap-3 text-xs border-t border-slate-100 py-2 first:border-t-0 first:pt-0">
+                    <span class="font-bold text-slate-900">{span.spanName}</span>
+                    <span class="font-bold text-red-700">{formatNumber(span.durationMs)}ms</span>
+                  </div>
+                ))}
+              </div>
+
+              <div class="bg-white border border-red-100 rounded-lg p-3">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                  <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Metric Evidence</p>
+                  <span class="text-[10px] text-slate-500">{formatNumber(rootCause.evidenceSummary?.metricCount)} samples</span>
+                </div>
+                {(rootCause.metricEvidence || []).length === 0 ? (
+                  <p class="text-xs text-slate-500 italic">No metric samples found yet.</p>
+                ) : rootCause.metricEvidence.slice(0, 6).map((metric, index) => (
+                  <div key={`${metric.metricName}-${metric.timestampMs}-${index}`} class="text-xs border-t border-slate-100 py-2 first:border-t-0 first:pt-0">
+                    <div class="flex items-center justify-between gap-3">
+                      <span class="font-bold text-slate-900">{metric.metricName || 'metric'}</span>
+                      <span class="font-bold text-indigo-700">{formatMetricValue(metric)}</span>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-1">
+                      {formatTime(metric.timestampMs)}
+                      {summarizeMetricAttributes(metric.attributes) && ` - ${summarizeMetricAttributes(metric.attributes)}`}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const renderPinnedIncident = () => {
+        if (!incidentSummary) return null;
+        const incident = incidentSummary.incident;
+        const metrics = [
+          { label: 'Revenue At Risk', value: formatCurrency(incidentSummary.orderImpact.revenueAtRisk || incident.actualRevenueAtRisk), icon: 'dollar-sign' },
+          { label: 'Orders', value: formatNumber(incidentSummary.orderImpact.affectedOrders), icon: 'shopping-cart' },
+          { label: 'Customers', value: formatNumber(incidentSummary.orderImpact.affectedCustomers), icon: 'users' },
+          { label: 'Accounts', value: formatNumber(incidentSummary.orderImpact.affectedAccounts), icon: 'building-2' }
+        ];
+
+        return (
+          <section class="sticky top-20 z-30 border border-slate-200 bg-white/95 backdrop-blur rounded-xl p-4 shadow-lg shadow-slate-950/5">
+            <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-xs font-mono text-slate-500">{incident.incidentId}</span>
+                  <span class={`px-2 py-1 rounded-md border text-[10px] font-bold ${severityClass(incident.severity)}`}>
+                    {incident.severity || 'INFO'}
+                  </span>
+                  <span class="px-2 py-1 rounded-md bg-slate-50 border border-slate-200 text-[10px] font-bold text-slate-600">
+                    {incident.status || 'UNKNOWN'}
+                  </span>
+                </div>
+                <h2 class="text-xl font-bold text-slate-900 mt-2">{incident.title || incident.scenario || 'Selected incident'}</h2>
+                <p class="text-xs text-slate-500 mt-1">
+                  Started {formatTime(incident.startedAt)} - Owner {incident.ownerTeam || 'N/A'}
+                </p>
+              </div>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2 xl:min-w-[560px]">
+                {metrics.map((metric) => (
+                  <div key={metric.label} class="border border-slate-200 bg-slate-50 rounded-lg p-3">
+                    <div class="flex items-center gap-2 text-slate-500">
+                      <Icon name={metric.icon} className="w-3.5 h-3.5" />
+                      <p class="text-[10px] uppercase tracking-wider font-bold">{metric.label}</p>
+                    </div>
+                    <p class="text-sm font-bold text-slate-900 mt-1">{metric.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      };
+
+      const renderWorkspaceTabs = () => {
+        const tabs = [
+          { id: 'command', label: 'Command Center', icon: 'layout-dashboard' },
+          { id: 'business', label: 'Business Impact', icon: 'briefcase-business' },
+          { id: 'rootCause', label: 'Root Cause', icon: 'scan-search' },
+          { id: 'timeline', label: 'Timeline', icon: 'git-branch' },
+          { id: 'search', label: 'Search', icon: 'search' },
+          { id: 'operator', label: 'Operator', icon: 'terminal' }
+        ];
+
+        return (
+          <div class="border border-slate-200 bg-white rounded-xl p-1 flex flex-wrap gap-1 shadow-sm">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setWorkspaceTab(tab.id)}
+                class={`px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
+                  workspaceTab === tab.id
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                <Icon name={tab.icon} className="w-4 h-4" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        );
+      };
+
+      const renderDemoPath = () => {
+        const cards = [
+          {
+            tab: 'command',
+            label: '1. Incident',
+            title: demoRecords?.incident?.incidentId || selectedIncidentId || 'Waiting',
+            subtitle: demoRecords?.incident?.title || 'Open the best incident'
+          },
+          {
+            tab: 'business',
+            label: '2. Business Impact',
+            title: demoRecords?.account?.name || demoRecords?.customer?.name || 'No account yet',
+            subtitle: demoRecords?.account?.accountId || demoRecords?.customer?.customerId || 'Generate linked orders'
+          },
+          {
+            tab: 'rootCause',
+            label: '3. Root Cause',
+            title: demoRecords?.suspectedService?.serviceName || rootCause?.suspectedService?.serviceName || 'No service yet',
+            subtitle: demoRecords?.suspectedService?.failedPayments ? `${formatNumber(demoRecords.suspectedService.failedPayments)} failed payments` : 'Show technical evidence'
+          },
+          {
+            tab: 'timeline',
+            label: '4. Timeline',
+            title: demoRecords?.incident?.incidentId || selectedIncidentId || 'Incident timeline',
+            subtitle: 'Show event sequence'
+          },
+          {
+            tab: 'trace',
+            label: '5. Trace Detail',
+            title: demoRecords?.trace?.traceId || demoRecords?.order?.traceId || 'No trace yet',
+            subtitle: demoRecords?.trace?.orderId || demoRecords?.order?.orderId || 'Open failed transaction'
+          }
+        ];
+
+        return (
+          <section class="border border-indigo-200 bg-indigo-50 rounded-xl p-4">
+            <div class="flex flex-col gap-4">
+              <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+                <div>
+                  <p class="text-xs font-bold uppercase tracking-wider text-indigo-700">Recommended Demo Path</p>
+                  <p class="text-sm text-slate-700 mt-1">
+                    {demoRecordsLoading ? 'Finding the strongest records...' : (demoRecords?.message || 'Use these cards to run the demo without hunting for IDs.')}
+                  </p>
+                </div>
+                <button
+                  onClick={loadDemoRecords}
+                  class="self-start px-3 py-2 bg-white border border-indigo-200 hover:border-indigo-400 text-indigo-700 rounded-lg text-xs font-bold transition-all"
+                >
+                  Refresh Recommendations
+                </button>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-5 gap-2">
+                {cards.map((card) => (
+                  <button
+                    key={card.label}
+                    onClick={() => openDemoStep(card.tab)}
+                    disabled={demoRecordsLoading || (card.tab === 'trace' && !demoRecords?.trace?.traceId && !demoRecords?.order?.traceId)}
+                    class="text-left bg-white border border-indigo-200 hover:border-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg p-3 transition-all"
+                  >
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-indigo-600">{card.label}</p>
+                    <p class="text-sm font-bold text-slate-900 mt-1 truncate">{card.title}</p>
+                    <p class="text-[11px] text-slate-500 mt-1 truncate">{card.subtitle}</p>
+                  </button>
+                ))}
+              </div>
+              {demoRecords && !demoRecords.ready && (
+                <div class="border border-amber-200 bg-amber-50 rounded-lg p-3 text-xs text-amber-800">
+                  Demo data is not fully ready yet. For the strongest story, run `GENERATOR_SCENARIO="payment_outage"` with `GENERATOR_INCIDENT_ID="INC-DEMO-001"` and let the generator publish more orders.
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      };
+
+      const renderCommandView = () => {
+        if (!incidentSummary) return null;
+        return (
+          <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div class="xl:col-span-2 flex flex-col gap-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white border border-slate-200 rounded-xl p-4">
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Payment Health</h4>
+                  <div class="flex flex-col gap-2">
+                    {incidentSummary.paymentImpact.length === 0 ? (
+                      <p class="text-xs text-slate-500 italic">No payment records linked yet.</p>
+                    ) : incidentSummary.paymentImpact.map((payment) => (
+                      <div key={payment.authorizationStatus || 'unknown'} class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-slate-700">{payment.authorizationStatus || 'UNKNOWN'}</span>
+                        <span class="text-slate-500">{formatNumber(payment.attempts)} attempts - {payment.avgLatencyMs || 0}ms avg</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-xl p-4">
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Support Impact</h4>
+                  <div class="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                      <p class="text-lg font-bold text-slate-900">{formatNumber(incidentSummary.ticketImpact.openTickets)}</p>
+                      <p class="text-[10px] text-slate-500 uppercase">Tickets</p>
+                    </div>
+                    <div>
+                      <p class="text-lg font-bold text-slate-900">{formatNumber(incidentSummary.ticketImpact.slaBreachRisks)}</p>
+                      <p class="text-[10px] text-slate-500 uppercase">SLA Risk</p>
+                    </div>
+                    <div>
+                      <p class="text-lg font-bold text-slate-900">{formatNumber(incidentSummary.ticketImpact.affectedTicketAccounts)}</p>
+                      <p class="text-[10px] text-slate-500 uppercase">Accounts</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-white border border-slate-200 rounded-xl p-4">
+                <div class="flex items-center justify-between mb-3">
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">Recent Affected Orders</h4>
+                  <span class="text-[10px] text-slate-500">Click order for trace detail</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {incidentSummary.recentOrders.length === 0 ? (
+                    <p class="text-xs text-slate-500 italic">No linked orders yet.</p>
+                  ) : incidentSummary.recentOrders.slice(0, 8).map((order) => (
+                    <button
+                      key={order.orderId}
+                      onClick={() => loadTrace(order.traceId)}
+                      class="text-left border border-slate-200 bg-slate-50 hover:border-indigo-300 rounded-lg p-3 transition-all"
+                    >
+                      <div class="flex items-center justify-between gap-3">
+                        <p class="text-xs font-bold text-slate-900">{order.orderId}</p>
+                        <p class="text-xs font-bold text-emerald-700">{formatCurrency(order.totalAmount)}</p>
+                      </div>
+                      <p class="text-[11px] text-slate-500 mt-1">{order.accountName || order.accountId} - {order.status}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-4">
+              <div class="border border-slate-200 bg-white rounded-xl p-5">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Top Affected Accounts</h4>
+                <div class="flex flex-col gap-3">
+                  {incidentSummary.topAccounts.length === 0 ? (
+                    <p class="text-xs text-slate-500 italic">No affected accounts yet.</p>
+                  ) : incidentSummary.topAccounts.map((account) => (
+                    <button
+                      key={account.accountId}
+                      onClick={() => loadImpactView('account', account.accountId)}
+                      class="text-left border border-slate-200 bg-slate-50 hover:border-indigo-300 rounded-lg p-3 transition-all"
+                    >
+                      <div class="flex items-start justify-between gap-3">
+                        <div>
+                          <p class="text-sm font-bold text-slate-900">{account.name || account.accountId}</p>
+                          <p class="text-xs text-slate-500">{account.slaTier || 'N/A'} - {account.accountId}</p>
+                        </div>
+                        <p class="text-xs font-bold text-emerald-700">{formatCurrency(account.revenueAtRisk)}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div class="border border-slate-200 bg-white rounded-xl p-5">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Recent Deployment Evidence</h4>
+                <div class="flex flex-col gap-3">
+                  {incidentSummary.deployments.length === 0 ? (
+                    <p class="text-xs text-slate-500 italic">No linked deployments.</p>
+                  ) : incidentSummary.deployments.map((deployment) => (
+                    <div key={deployment.deploymentId} class="border border-slate-200 bg-slate-50 rounded-lg p-3">
+                      <p class="text-sm font-bold text-slate-900">{deployment.serviceName}</p>
+                      <p class="text-xs text-slate-500">{deployment.version} - {deployment.status} - {deployment.changeRisk}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+      };
+
+      const renderBusinessView = () => {
+        if (impactView || impactLoading) {
+          return (
+            <div class="flex flex-col gap-3">
+              {impactView && (
+                <button
+                  onClick={() => setImpactView(null)}
+                  class="self-start px-3 py-2 bg-white border border-slate-200 hover:border-indigo-300 text-slate-700 rounded-lg text-xs font-bold transition-all"
+                >
+                  Choose Different Account Or Customer
+                </button>
+              )}
+              {renderImpactView()}
+            </div>
+          );
+        }
+        if (!incidentSummary) return null;
+
+        return (
+          <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="border border-slate-200 bg-white rounded-xl p-5">
+              <h3 class="text-base font-bold text-slate-900">Choose An Account</h3>
+              <p class="text-xs text-slate-500 mt-1 mb-4">Open a 360 view to show ARR, SLA, affected customers, support risk, payments, shipments, and recommended action.</p>
+              <div class="flex flex-col gap-3">
+                {incidentSummary.topAccounts.length === 0 ? (
+                  <p class="text-xs text-slate-500 italic">No affected accounts found for this incident.</p>
+                ) : incidentSummary.topAccounts.map((account) => (
+                  <button
+                    key={account.accountId}
+                    onClick={() => loadImpactView('account', account.accountId)}
+                    class="text-left border border-slate-200 bg-slate-50 hover:border-indigo-300 rounded-lg p-3 transition-all"
+                  >
+                    <div class="flex items-center justify-between gap-3">
+                      <div>
+                        <p class="text-sm font-bold text-slate-900">{account.name || account.accountId}</p>
+                        <p class="text-xs text-slate-500">{account.slaTier || 'N/A'} - {account.accountId}</p>
+                      </div>
+                      <span class="text-xs font-bold text-emerald-700">{formatCurrency(account.revenueAtRisk)}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div class="border border-slate-200 bg-white rounded-xl p-5">
+              <h3 class="text-base font-bold text-slate-900">Choose A Customer</h3>
+              <p class="text-xs text-slate-500 mt-1 mb-4">Use a recent order customer when you want an individual impact story.</p>
+              <div class="flex flex-col gap-3">
+                {incidentSummary.recentOrders.length === 0 ? (
+                  <p class="text-xs text-slate-500 italic">No recent orders found for this incident.</p>
+                ) : incidentSummary.recentOrders.slice(0, 8).map((order) => (
+                  <button
+                    key={order.orderId}
+                    onClick={() => loadImpactView('customer', order.customerId)}
+                    class="text-left border border-slate-200 bg-slate-50 hover:border-indigo-300 rounded-lg p-3 transition-all"
+                  >
+                    <div class="flex items-center justify-between gap-3">
+                      <div>
+                        <p class="text-sm font-bold text-slate-900">{order.customerId}</p>
+                        <p class="text-xs text-slate-500">{order.orderId} - {order.accountName || order.accountId}</p>
+                      </div>
+                      <span class="text-xs font-bold text-emerald-700">{formatCurrency(order.totalAmount)}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      };
+
+      const renderTimelineWorkspace = () => (
+        <section class="bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Investigation Timeline</h3>
+              <p class="text-xs text-slate-500 mt-1">Business, support, payment, shipment, and deployment events normalized by correlation keys.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              {['all', ...(timelineData?.eventTypes || [])].map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setTimelineTypeFilter(type)}
+                  class={`px-3 py-1 rounded-md border text-[10px] font-bold uppercase transition-all ${
+                    timelineTypeFilter === type
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'
+                  }`}
+                >
+                  {type.replace('_', ' ')}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {timelineLoading ? (
+            <div class="py-12 flex items-center justify-center gap-3 text-sm text-slate-500">
+              <div class="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+              Loading investigation timeline...
+            </div>
+          ) : !timelineData || timelineData.events.length === 0 ? (
+            <p class="text-xs text-slate-500 italic">No timeline events found yet.</p>
+          ) : (
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+              <div class="lg:col-span-3 flex flex-col gap-3 max-h-[620px] overflow-y-auto custom-scrollbar pr-1">
+                {timelineData.events
+                  .filter((event) => timelineTypeFilter === 'all' || event.type === timelineTypeFilter)
+                  .map((event) => (
+                    <button
+                      key={event.id}
+                      onClick={() => setSelectedTimelineEvent(event)}
+                      class={`text-left border rounded-lg p-3 transition-all ${timelineSeverityClass(event.severity)} ${
+                        selectedTimelineEvent?.id === event.id ? 'ring-2 ring-indigo-500' : ''
+                      }`}
+                    >
+                      <div class="flex items-start gap-3">
+                        <Icon name={timelineIcon(event.type)} className="w-4 h-4 mt-0.5" />
+                        <div class="flex-grow min-w-0">
+                          <div class="flex items-start justify-between gap-3">
+                            <p class="text-sm font-bold">{event.title}</p>
+                            <span class="text-[10px] font-mono whitespace-nowrap">{formatTime(event.timestamp)}</span>
+                          </div>
+                          <p class="text-xs mt-1 opacity-80">{event.subtitle}</p>
+                          {event.traceId && <p class="text-[10px] font-mono mt-2 opacity-70">trace {event.traceId}</p>}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+              </div>
+              <div class="lg:col-span-2 border border-slate-200 rounded-lg bg-slate-50 p-4 min-h-96">
+                {selectedTimelineEvent ? (
+                  <div class="flex flex-col gap-3">
+                    <div>
+                      <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">{selectedTimelineEvent.type.replace('_', ' ')}</p>
+                      <h4 class="text-sm font-bold text-slate-900 mt-1">{selectedTimelineEvent.title}</h4>
+                      <p class="text-xs text-slate-500 mt-1">{selectedTimelineEvent.subtitle}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <p class="text-slate-500 uppercase text-[10px] font-bold">Severity</p>
+                        <p class="font-bold text-slate-900">{selectedTimelineEvent.severity}</p>
+                      </div>
+                      <div>
+                        <p class="text-slate-500 uppercase text-[10px] font-bold">Entity</p>
+                        <p class="font-mono text-slate-900 break-all">{selectedTimelineEvent.entityId}</p>
+                      </div>
+                    </div>
+                    {selectedTimelineEvent.traceId && (
+                      <button
+                        onClick={() => loadTrace(selectedTimelineEvent.traceId)}
+                        class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-all"
+                      >
+                        Open Trace Detail
+                      </button>
+                    )}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {selectedTimelineEvent.details?.accountId && (
+                        <button onClick={() => loadImpactView('account', selectedTimelineEvent.details.accountId)} class="px-3 py-2 bg-white border border-indigo-200 hover:border-indigo-400 text-indigo-700 rounded-lg text-xs font-bold transition-all">Account 360</button>
+                      )}
+                      {selectedTimelineEvent.details?.customerId && (
+                        <button onClick={() => loadImpactView('customer', selectedTimelineEvent.details.customerId)} class="px-3 py-2 bg-white border border-indigo-200 hover:border-indigo-400 text-indigo-700 rounded-lg text-xs font-bold transition-all">Customer 360</button>
+                      )}
+                    </div>
+                    <pre class="bg-white border border-slate-200 rounded-lg p-3 text-[11px] text-slate-700 overflow-x-auto custom-scrollbar max-h-72">
+                      {JSON.stringify(selectedTimelineEvent.details, null, 2)}
+                    </pre>
+                  </div>
+                ) : (
+                  <div class="h-full flex items-center justify-center text-center text-xs text-slate-500">
+                    Select a timeline event to inspect the underlying document fields.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
+      );
+
+      const renderSearchView = () => (
+        <section class="border border-slate-200 bg-white rounded-xl p-5 flex flex-col gap-4">
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Search And Correlate</h3>
+            <p class="text-xs text-slate-500">Use exact order, customer, or trace IDs from the demo panels to jump into trace detail.</p>
+          </div>
+
+          <form onSubmit={handleSearch} class="w-full flex flex-col gap-4">
+            <div class="grid grid-cols-4 gap-2 bg-slate-50 border border-slate-200 p-1 rounded-xl text-xs font-semibold">
+              {[
+                { id: 'traceId', label: 'Trace ID' },
+                { id: 'orderId', label: 'Order ID' },
+                { id: 'customerId', label: 'Customer ID' },
+                { id: 'any', label: 'Any Exact ID' }
+              ].map((btn) => (
+                <button
+                  key={btn.id}
+                  type="button"
+                  onClick={() => setSearchType(btn.id)}
+                  class={`py-2 rounded-lg transition-all ${
+                    searchType === btn.id ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900 hover:bg-white'
+                  }`}
+                >
+                  {btn.label}
+                </button>
+              ))}
+            </div>
+
+            <div class="relative flex items-center">
+              <input
+                type="text"
+                placeholder={`Enter exact ${searchType === 'any' ? 'order, customer, or trace ID' : searchType}...`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                class="w-full bg-white border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-900 placeholder-slate-400 rounded-xl px-5 py-4 pl-12 text-sm outline-none transition-all"
+              />
+              <Icon name="search" className="absolute left-4 w-5 h-5 text-slate-400" />
+              <button
+                type="submit"
+                disabled={loading}
+                class="absolute right-3 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+              >
+                {loading ? 'Searching...' : 'Search'}
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-500">
+              Exact lookup keeps the demo fast at large scale. For examples, click an order or trace from Command Center, Timeline, or Recommended Demo Path.
+            </p>
+          </form>
+
+          {searchResults.length > 0 && (
+            <div class="w-full bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
+              <div class="px-5 py-3 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+                Search Results ({searchResults.length})
+              </div>
+              <div class="divide-y divide-slate-200 max-h-96 overflow-y-auto custom-scrollbar">
+                {searchResults.map((row) => (
+                  <button
+                    key={row.orderId}
+                    onClick={() => loadTrace(row.traceId)}
+                    class="w-full text-left px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all group"
+                  >
+                    <div class="flex flex-col gap-1">
+                      <span class="text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">Order #{row.orderId}</span>
+                      <span class="text-xs text-slate-500 font-mono tracking-tight">Trace: {row.traceId}</span>
+                    </div>
+                    <div class="text-right flex flex-col gap-1">
+                      <span class="text-sm font-bold text-indigo-600">${row.totalAmount}</span>
+                      <span class="text-xs text-slate-500">{new Date(row.orderTime).toLocaleTimeString()}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {searchAttempted && !loading && searchResults.length === 0 && (
+            <div class="border border-slate-200 bg-slate-50 rounded-xl p-5 text-sm text-slate-600">
+              <p class="font-bold text-slate-900">No exact match found.</p>
+              <p class="text-xs mt-1">Use a full order ID, customer ID, or trace ID from the demo panels. Prefix searches are intentionally disabled for large datasets.</p>
+            </div>
+          )}
+        </section>
+      );
+
+      const renderOperatorView = () => {
+        const activeQuery = operatorQueries.find((query) => query.id === selectedOperatorQuery) || operatorQueries[0];
+        const rows = operatorResult?.rows || [];
+        const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
+
+        return (
+          <section class="border border-slate-200 bg-white rounded-xl p-5 flex flex-col gap-5">
+            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Demo Operator Queries</h3>
+                <p class="text-xs text-slate-500 mt-1">
+                  Run curated read-only checks against Couchbase without copying SQL++ from the docs.
+                </p>
+              </div>
+              <div class="flex flex-wrap gap-2 text-[11px] text-slate-600">
+                <span class="px-2 py-1 rounded-md bg-slate-50 border border-slate-200">Incident: {selectedIncidentId || 'none'}</span>
+                <span class="px-2 py-1 rounded-md bg-slate-50 border border-slate-200">Trace: {demoRecords?.trace?.traceId || demoRecords?.order?.traceId || 'auto'}</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div class="flex flex-col gap-2">
+                {operatorQueries.map((query) => (
+                  <button
+                    key={query.id}
+                    onClick={() => runOperatorQuery(query.id)}
+                    class={`text-left border rounded-lg p-3 transition-all ${
+                      selectedOperatorQuery === query.id
+                        ? 'border-indigo-300 bg-indigo-50'
+                        : 'border-slate-200 hover:border-indigo-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <p class="text-xs font-bold text-slate-900">{query.title}</p>
+                    <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">{query.purpose}</p>
+                    {query.params.length > 0 && (
+                      <p class="text-[10px] font-mono text-indigo-700 mt-2">uses {query.params.join(', ')}</p>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              <div class="lg:col-span-2 flex flex-col gap-4">
+                <div class="border border-slate-200 rounded-lg bg-slate-50 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-bold text-slate-900">{activeQuery?.title || operatorResult?.title || 'Select a query'}</p>
+                    <p class="text-[11px] text-slate-500 mt-1">{activeQuery?.purpose || operatorResult?.purpose || 'Run a query to inspect live demo data.'}</p>
+                  </div>
+                  <button
+                    onClick={() => runOperatorQuery(selectedOperatorQuery)}
+                    disabled={operatorLoading || operatorQueries.length === 0}
+                    class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+                  >
+                    {operatorLoading ? 'Running...' : 'Run Selected Query'}
+                  </button>
+                </div>
+
+                {operatorLoading && (
+                  <div class="border border-indigo-200 bg-indigo-50 rounded-lg p-4 text-sm text-indigo-700 flex items-center gap-3">
+                    <div class="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    Running {activeQuery?.title || 'operator query'}...
+                  </div>
+                )}
+
+                {operatorError && (
+                  <div class="border border-red-200 bg-red-50 rounded-lg p-4 text-sm text-red-700">
+                    {operatorError}
+                  </div>
+                )}
+
+                {operatorResult && (
+                  <div class="flex flex-col gap-4">
+                    <div class="border border-slate-200 rounded-lg overflow-hidden">
+                      <div class="px-4 py-2 bg-slate-900 text-white text-xs font-bold flex items-center justify-between">
+                        <span>Results</span>
+                        <span>{operatorResult.rowCount} rows</span>
+                      </div>
+                      {rows.length === 0 ? (
+                        <div class="p-6 text-sm text-slate-500 italic">No rows returned for the current demo context.</div>
+                      ) : (
+                        <div class="overflow-x-auto custom-scrollbar">
+                          <table class="min-w-full text-xs">
+                            <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider">
+                              <tr>
+                                {columns.map((column) => <th key={column} class="text-left px-3 py-2 font-bold">{column}</th>)}
+                              </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                              {rows.map((row, rowIndex) => (
+                                <tr key={rowIndex} class="hover:bg-slate-50">
+                                  {columns.map((column) => (
+                                    <td key={column} class="px-3 py-2 text-slate-700 align-top max-w-xs truncate">
+                                      {typeof row[column] === 'object' ? JSON.stringify(row[column]) : String(row[column] ?? '')}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+
+                    <div class="border border-slate-200 rounded-lg overflow-hidden">
+                      <div class="px-4 py-2 bg-slate-50 text-xs font-bold text-slate-600">SQL++ used by this check</div>
+                      <pre class="p-4 text-[11px] bg-slate-950 text-emerald-400 overflow-x-auto custom-scrollbar whitespace-pre-wrap">{operatorResult.sql}</pre>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        );
+      };
+
+      return (
+        <div class="flex flex-col min-h-screen bg-slate-950 text-slate-100">
+          <Header onHome={resetApp} />
+          
+          <main class="flex-grow p-6 md:p-8 max-w-7xl w-full mx-auto flex flex-col gap-6">
+            {error && (
+              <div class="p-4 rounded-xl border border-red-500/20 bg-red-950/20 text-red-400 text-sm flex items-center gap-3">
+                <Icon name="alert-triangle" className="w-5 h-5 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {!currentTraceId ? (
+              /* ==================== SEARCH / LANDING SCREEN ==================== */
+              <div class="flex flex-col gap-6 w-full">
+                <section class="flex flex-col gap-4">
+                  <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                    <div class="flex flex-col gap-2">
+                      <span class="text-xs font-bold uppercase tracking-wider text-brand">Incident Command Center</span>
+                      <h2 class="text-3xl font-bold tracking-tight text-white">Business Impact Operations View</h2>
+                      <p class="text-slate-400 text-sm max-w-3xl">
+                        Start from an incident and immediately see affected services, customers, accounts, revenue, tickets, payments, and deployments.
+                      </p>
+                    </div>
+                    <button
+                      onClick={loadIncidents}
+                      class="self-start md:self-auto px-4 py-2 bg-slate-900 border border-slate-800 hover:border-indigo-500/60 text-slate-200 rounded-lg text-xs font-bold transition-all flex items-center gap-2"
+                    >
+                      <Icon name="refresh-cw" className="w-4 h-4" />
+                      Refresh
+                    </button>
+                  </div>
+
+                  {incidents.length === 0 ? (
+                    <div class="border border-slate-900 bg-slate-900/30 rounded-xl p-8 text-center text-sm text-slate-500">
+                      No incident documents found yet. Confirm the event generator is running and the `incidents` collection has documents.
+                    </div>
+                  ) : (
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                      {incidents.slice(0, 6).map((incident) => (
+                        <button
+                          key={incident.incidentId}
+                          onClick={() => loadIncidentSummary(incident.incidentId)}
+                          class={`text-left border rounded-xl p-4 bg-slate-900/30 hover:bg-slate-900/60 transition-all ${
+                            selectedIncidentId === incident.incidentId ? 'border-indigo-500/70 shadow-lg shadow-indigo-950/30' : 'border-slate-900'
+                          }`}
+                        >
+                          <div class="flex items-start justify-between gap-3">
+                            <div class="flex flex-col gap-1">
+                              <span class="text-xs font-mono text-slate-500">{incident.incidentId}</span>
+                              <h3 class="text-sm font-bold text-white leading-snug">{incident.title || incident.scenario || 'Incident'}</h3>
+                            </div>
+                            <span class={`px-2 py-1 rounded-md border text-[10px] font-bold ${severityClass(incident.severity)}`}>
+                              {incident.severity || 'INFO'}
+                            </span>
+                          </div>
+                          <div class="grid grid-cols-2 gap-3 mt-4 text-xs">
+                            <div>
+                              <p class="text-slate-500 uppercase font-bold text-[10px]">Revenue Risk</p>
+                              <p class="text-emerald-300 font-bold">{formatCurrency(incident.actualRevenueAtRisk || incident.estimatedRevenueImpact)}</p>
+                            </div>
+                            <div>
+                              <p class="text-slate-500 uppercase font-bold text-[10px]">Customers</p>
+                              <p class="text-white font-bold">{formatNumber(incident.affectedCustomerCount)}</p>
+                            </div>
+                            <div>
+                              <p class="text-slate-500 uppercase font-bold text-[10px]">Orders</p>
+                              <p class="text-white font-bold">{formatNumber(incident.affectedOrderCount)}</p>
+                            </div>
+                            <div>
+                              <p class="text-slate-500 uppercase font-bold text-[10px]">Status</p>
+                              <p class="text-indigo-300 font-bold">{incident.status || 'UNKNOWN'}</p>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                {incidentLoading ? (
+                  <section class="border border-slate-900 bg-slate-900/20 rounded-xl p-10 flex items-center justify-center gap-3 text-sm text-slate-400">
+                    <div class="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    Loading incident summary...
+                  </section>
+                ) : incidentSummary && (
+                  <div class="flex flex-col gap-4">
+                    {renderPinnedIncident()}
+                    {renderWorkspaceTabs()}
+                    {renderDemoPath()}
+                    {workspaceTab === 'command' && renderCommandView()}
+                    {workspaceTab === 'business' && renderBusinessView()}
+                    {workspaceTab === 'rootCause' && renderRootCauseView()}
+                    {workspaceTab === 'timeline' && renderTimelineWorkspace()}
+                    {workspaceTab === 'search' && renderSearchView()}
+                    {workspaceTab === 'operator' && renderOperatorView()}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* ==================== CORRELATION VIEW SCREEN ==================== */
+              <div class="flex flex-col gap-6">
+                
+                {/* Back Button */}
+                <div class="flex items-center justify-between">
+                  <button
+                    onClick={resetApp}
+                    class="inline-flex items-center gap-2 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors uppercase tracking-wider"
+                  >
+                    <Icon name="arrow-left" className="w-4 h-4" />
+                    Back to Search
+                  </button>
+                  <span class="text-xs font-mono text-slate-600 bg-slate-900/50 border border-slate-800/50 rounded-lg px-3 py-1">
+                    Trace: {currentTraceId}
+                  </span>
+                </div>
+
+                {loading || !correlationData ? (
+                  <div class="flex flex-col items-center justify-center py-24 gap-4">
+                    <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p class="text-slate-400 text-sm">Aggregating telemetry from Capella...</p>
+                  </div>
+                ) : (
+                  <div class="flex flex-col gap-6">
+                    {/* Unified Business metadata Cards */}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      
+                      {/* Customer Card */}
+                      <div class="bg-slate-900/30 border border-slate-900/60 rounded-xl p-5 flex flex-col gap-4 shadow-sm backdrop-blur-sm relative overflow-hidden">
+                        <div class="absolute -right-2 -bottom-2 text-slate-900/20 font-bold text-5xl pointer-events-none">CUSTOMER</div>
+                        <div class="flex items-center justify-between border-b border-slate-900 pb-3">
+                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Customer Info</span>
+                          <span class="px-2 py-0.5 text-[10px] font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-md">
+                            {correlationData.order ? correlationData.order.customerId : 'N/A'}
+                          </span>
+                        </div>
+                        {correlationData.order ? (
+                          <div class="flex flex-col gap-1.5 text-sm">
+                            <h4 class="font-bold text-white text-base">{correlationData.order.customerName}</h4>
+                            <p class="text-slate-400 text-xs flex items-center gap-1.5">
+                              <Icon name="mail" className="w-3.5 h-3.5" />
+                              {correlationData.order.customerEmail}
+                            </p>
+                            <p class="text-slate-400 text-xs flex items-center gap-1.5">
+                              <Icon name="globe" className="w-3.5 h-3.5" />
+                              Region: {correlationData.order.customerCountry}
+                            </p>
+                          </div>
+                        ) : (
+                          <p class="text-slate-600 text-xs italic">Customer record not found</p>
+                        )}
+                      </div>
+
+                      {/* Order Card */}
+                      <div class="bg-slate-900/30 border border-slate-900/60 rounded-xl p-5 flex flex-col gap-4 shadow-sm backdrop-blur-sm relative overflow-hidden">
+                        <div class="absolute -right-2 -bottom-2 text-slate-900/20 font-bold text-5xl pointer-events-none">ORDER</div>
+                        <div class="flex items-center justify-between border-b border-slate-900 pb-3">
+                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Order Details</span>
+                          <span class="px-2 py-0.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-md">
+                            {correlationData.order ? correlationData.order.orderId : 'N/A'}
+                          </span>
+                        </div>
+                        {correlationData.order ? (
+                          <div class="flex flex-col gap-1.5 text-sm">
+                            <h4 class="font-bold text-white text-base">
+                              Total Amount: <span class="text-emerald-400">${correlationData.order.totalAmount}</span>
+                            </h4>
+                            <p class="text-slate-400 text-xs">
+                              Items Ordered: {correlationData.order.items?.map(i => i.product_name).join(', ')}
+                            </p>
+                            <p class="text-slate-400 text-xs flex items-center gap-1.5">
+                              <Icon name="clock" className="w-3.5 h-3.5" />
+                              Placed at: {new Date(correlationData.order.orderTime).toLocaleString()}
+                            </p>
+                          </div>
+                        ) : (
+                          <p class="text-slate-600 text-xs italic">Order document not found</p>
+                        )}
+                      </div>
+
+                      {/* Support Ticket Card */}
+                      <div class="bg-slate-900/30 border border-slate-900/60 rounded-xl p-5 flex flex-col gap-4 shadow-sm backdrop-blur-sm relative overflow-hidden">
+                        <div class="absolute -right-2 -bottom-2 text-slate-900/20 font-bold text-5xl pointer-events-none">TICKET</div>
+                        <div class="flex items-center justify-between border-b border-slate-900 pb-3">
+                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Support Incident</span>
+                          {correlationData.tickets && correlationData.tickets.length > 0 ? (
+                            <span class="px-2 py-0.5 text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-md">
+                              {correlationData.tickets[0].ticketId}
+                            </span>
+                          ) : (
+                            <span class="px-2 py-0.5 text-[10px] font-bold text-slate-500 bg-slate-500/10 border border-slate-500/20 rounded-md">
+                              None
+                            </span>
+                          )}
+                        </div>
+                        {correlationData.tickets && correlationData.tickets.length > 0 ? (
+                          <div class="flex flex-col gap-1.5 text-sm">
+                            <h4 class="font-bold text-amber-400 text-sm flex items-center gap-1.5">
+                              <Icon name="alert-circle" className="w-4 h-4 text-amber-400" />
+                              {correlationData.tickets[0].issueType}
+                            </h4>
+                            <p class="text-slate-400 text-xs">
+                              Status: <span class="text-white font-bold">{correlationData.tickets[0].status}</span>
+                            </p>
+                            <p class="text-slate-400 text-xs">
+                              Submitted: {new Date(correlationData.tickets[0].createdTime).toLocaleString()}
+                            </p>
+                          </div>
+                        ) : (
+                          <p class="text-slate-500 text-xs italic">No support tickets linked to this trace.</p>
+                        )}
+                      </div>
+
+                    </div>
+
+                    {/* Navigation Tabs */}
+                    <div class="flex border-b border-slate-900 bg-slate-900/20 rounded-xl p-1 self-start">
+                      {[
+                        { id: 'timeline', label: 'Spans Waterfall', count: correlationData.spans.length },
+                        { id: 'logs', label: 'Correlated Logs', count: correlationData.logs.length },
+                        { id: 'raw', label: 'Raw N1QL JSON Data', count: null }
+                      ].map(tab => (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          class={`px-4 py-2 text-xs font-semibold tracking-wide rounded-lg transition-all flex items-center gap-2 ${
+                            activeTab === tab.id
+                              ? 'bg-indigo-600 text-white'
+                              : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          {tab.label}
+                          {tab.count !== null && (
+                            <span class={`px-1.5 py-0.5 rounded-full text-[9px] ${activeTab === tab.id ? 'bg-indigo-800 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                              {tab.count}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* TAB PANEL CONTENT */}
+                    <div class="bg-slate-900/20 border border-slate-900 rounded-xl p-6 shadow-md min-h-72">
+                      
+                      {activeTab === 'timeline' && (
+                        /* ==================== TIMELINE WATERFALL ==================== */
+                        <div class="flex flex-col gap-6">
+                          <div class="flex flex-col gap-1">
+                            <h3 class="font-bold text-white text-base">Distributed Trace Spans</h3>
+                            <p class="text-xs text-slate-500">Visualizing service-to-service execution latency across the application context.</p>
+                          </div>
+                          
+                          {correlationData.spans.length === 0 ? (
+                            <div class="text-center py-12 text-slate-600 text-xs italic">No spans recorded for this trace yet.</div>
+                          ) : (
+                            <div class="flex flex-col gap-4">
+                              {/* Waterfall bars */}
+                              {(() => {
+                                // Calculate total trace duration
+                                const startTimes = correlationData.spans.map(s => s.startTimeMs);
+                                const endTimes = correlationData.spans.map(s => s.startTimeMs + s.durationMs);
+                                const minStart = Math.min(...startTimes);
+                                const maxEnd = Math.max(...endTimes);
+                                const totalTraceDuration = maxEnd - minStart || 1;
+
+                                return correlationData.spans.map((span) => {
+                                  // Calculate offset percentage and width percentage
+                                  const offsetPct = ((span.startTimeMs - minStart) / totalTraceDuration) * 100;
+                                  const widthPct = Math.max((span.durationMs / totalTraceDuration) * 100, 1.5); // min 1.5% for visual visibility
+
+                                  // Check service name or span types to decide coloring
+                                  let isDb = span.attributes?.some(a => a.key === 'db.system') || span.spanName.includes('db_');
+                                  let isPayment = span.spanName.includes('payment_');
+
+                                  let barColor = 'from-indigo-500 to-indigo-600 shadow-indigo-500/10';
+                                  let typeLabel = 'Internal Service';
+                                  if (isDb) {
+                                    barColor = 'from-cyan-500 to-cyan-600 shadow-cyan-500/10';
+                                    typeLabel = 'Database Query (Couchbase)';
+                                  } else if (isPayment) {
+                                    barColor = 'from-purple-500 to-purple-600 shadow-purple-500/10';
+                                    typeLabel = 'External API Gateway';
+                                  }
+
+                                  return (
+                                    <div key={span.spanId} class="flex flex-col gap-1 text-xs">
+                                      <div class="flex items-center justify-between text-[11px] text-slate-400 font-semibold px-1">
+                                        <span class="flex items-center gap-1.5">
+                                          <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                          {span.spanName}
+                                          <span class="text-slate-600 text-[10px]">({typeLabel})</span>
+                                        </span>
+                                        <span class="font-bold text-slate-300">{span.durationMs}ms</span>
+                                      </div>
+                                      {/* Visual Bar container */}
+                                      <div class="w-full bg-slate-950 rounded-full h-5 relative overflow-hidden">
+                                        <div
+                                          class={`absolute top-0 bottom-0 bg-gradient-to-r rounded-full shadow-md ${barColor}`}
+                                          style={{ left: `${offsetPct}%`, width: `${widthPct}%` }}
+                                        ></div>
+                                      </div>
+                                    </div>
+                                  );
+                                });
+                              })()}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {activeTab === 'logs' && (
+                        /* ==================== CORRELATED LOGS ==================== */
+                        <div class="flex flex-col gap-6">
+                          <div class="flex flex-col gap-1">
+                            <h3 class="font-bold text-white text-base">Application Log Events</h3>
+                            <p class="text-xs text-slate-500">Chronological telemetry logs emitted directly by OTel instrumented microservices.</p>
+                          </div>
+
+                          {correlationData.logs.length === 0 ? (
+                            <div class="text-center py-12 text-slate-600 text-xs italic">No logs recorded for this trace yet.</div>
+                          ) : (
+                            <div class="flex flex-col border border-slate-900 rounded-xl overflow-hidden divide-y divide-slate-900 bg-slate-950/50">
+                              {correlationData.logs.map((log, index) => {
+                                const isWarning = log.severity === 'WARNING';
+                                const isError = log.severity === 'ERROR';
+                                
+                                let badgeColor = 'bg-slate-800 text-slate-300 border-slate-700';
+                                if (isWarning) badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                                if (isError) badgeColor = 'bg-red-500/10 text-red-400 border-red-500/20';
+
+                                return (
+                                  <div key={index} class="p-4 flex gap-4 text-xs group hover:bg-slate-900/10 transition-colors">
+                                    <div class="flex-shrink-0">
+                                      <span class={`px-2 py-0.5 rounded-md font-bold border uppercase text-[9px] tracking-wide ${badgeColor}`}>
+                                        {log.severity}
+                                      </span>
+                                    </div>
+                                    <div class="flex-grow flex flex-col gap-1">
+                                      <p class="text-slate-300 font-medium select-text">{log.logMessage}</p>
+                                      <span class="text-[10px] text-slate-500">
+                                        {new Date(log.timestampMs).toLocaleTimeString()}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {activeTab === 'raw' && (
+                        /* ==================== RAW N1QL JSON VIEWER ==================== */
+                        <div class="flex flex-col gap-4">
+                          <div class="flex flex-col gap-1">
+                            <h3 class="font-bold text-white text-base">Couchbase JSON Document Output</h3>
+                            <p class="text-xs text-slate-500">Aggregated N1QL JSON response fetched directly from collections `customers`, `orders`, `support_tickets`, `logs`, and `traces`.</p>
+                          </div>
+                          <pre class="bg-slate-950 border border-slate-900 p-4 rounded-xl text-xs font-mono text-emerald-500 overflow-x-auto custom-scrollbar select-text max-h-[500px]">
+                            {JSON.stringify(correlationData, null, 2)}
+                          </pre>
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

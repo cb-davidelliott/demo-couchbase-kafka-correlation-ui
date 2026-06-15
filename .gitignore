@@ -1,0 +1,43 @@
+# Secrets and Local Settings
+.env
+.env.local
+*.secret
+*.pem
+*.key
+
+# Terraform Files
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+*.tfvars
+*.tfvars.json
+.terraform.tfstate.lock.info
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Log and Build Files
+*.log
+node_modules/
+dist/
+build/
+out/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+env/

@@ -1,0 +1,51 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    send_batch_size: 8192
+    timeout: 5s
+    send_batch_max_size: 10240
+
+exporters:
+  # Export to Redpanda topics as OTLP-JSON format
+  kafka:
+    brokers:
+      - "redpanda:29092"
+    protocol_version: "2.0.0"
+    traces:
+      topic: "traces"
+      encoding: "otlp_json"
+    metrics:
+      topic: "metrics"
+      encoding: "otlp_json"
+    logs:
+      topic: "logs"
+      encoding: "otlp_json"
+
+  # Print telemetry to stdout for logging / validation
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [kafka, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [kafka]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [kafka, debug]
+  telemetry:
+    logs:
+      level: "info"

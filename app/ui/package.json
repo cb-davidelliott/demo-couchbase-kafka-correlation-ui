@@ -1,0 +1,14 @@
+{
+  "name": "cb-otel-demo-ui",
+  "version": "1.0.0",
+  "description": "Express server and React UI dashboard for Couchbase Capella + Kafka + OpenTelemetry Demo",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "couchbase": "^4.2.4",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}

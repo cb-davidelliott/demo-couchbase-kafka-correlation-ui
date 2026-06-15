@@ -1,0 +1,70 @@
+#cloud-config
+package_update: true
+package_upgrade: false
+
+packages:
+  - git
+  - curl
+  - jq
+  - ca-certificates
+  - gnupg
+
+runcmd:
+  # 1. Install Docker
+  - mkdir -p /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu jammy stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - systemctl enable docker
+  - systemctl start docker
+
+  # 2. Add admin user to docker group
+  - usermod -aG docker ${admin_username}
+
+  # 3. Clone Repository
+  - mkdir -p /opt/couchbase-capella-kafka-demo
+  - git clone ${github_repo_url} /opt/couchbase-capella-kafka-demo || (cd /opt/couchbase-capella-kafka-demo && git fetch --all && git reset --hard origin/main)
+
+  # 4. Write VM-local Environment Variables
+  - |
+    cat << 'EOF' > /opt/couchbase-capella-kafka-demo/.env
+    COUCHBASE_CONN_STR="${couchbase_conn_str}"
+    COUCHBASE_SEED_NODES="${couchbase_seed_nodes}"
+    COUCHBASE_USERNAME="${couchbase_username}"
+    COUCHBASE_PASSWORD="${couchbase_password}"
+    COUCHBASE_BUCKET="${couchbase_bucket}"
+    COUCHBASE_SCOPE="${couchbase_scope}"
+    GENERATOR_PROFILE="${generator_profile}"
+    GENERATOR_INTERVAL_SECONDS="${generator_interval_seconds}"
+    GENERATOR_EVENTS_PER_BATCH="${generator_events_per_batch}"
+    GENERATOR_ENABLE_OTEL_CALLS="${generator_enable_otel_calls}"
+    GENERATOR_NEW_CUSTOMER_PROBABILITY="${generator_new_customer_probability}"
+    GENERATOR_TICKET_PROBABILITY="${generator_ticket_probability}"
+    GENERATOR_ENABLE_METRICS="${generator_enable_metrics}"
+    GENERATOR_ENABLE_INCIDENT_UPDATES="${generator_enable_incident_updates}"
+    GENERATOR_UNIQUE_METRIC_DOCS="${generator_unique_metric_docs}"
+    GENERATOR_LOG_EVERY_N_EVENTS="${generator_log_every_n_events}"
+    GENERATOR_FLUSH_EVERY_N_EVENTS="${generator_flush_every_n_events}"
+    GENERATOR_INCIDENT_UPDATE_EVERY_N_EVENTS="${generator_incident_update_every_n_events}"
+    GENERATOR_PRODUCER_LINGER_MS="${generator_producer_linger_ms}"
+    GENERATOR_PRODUCER_BATCH_NUM_MESSAGES="${generator_producer_batch_num_messages}"
+    GENERATOR_PRODUCER_QUEUE_MAX_MESSAGES="${generator_producer_queue_max_messages}"
+    GENERATOR_PRODUCER_COMPRESSION="${generator_producer_compression}"
+    GENERATOR_ENTERPRISE_ACCOUNT_COUNT="${generator_enterprise_account_count}"
+    GENERATOR_SCENARIO="${generator_scenario}"
+    GENERATOR_INCIDENT_ID="${generator_incident_id}"
+    GENERATOR_RANDOM_SEED="${generator_random_seed}"
+    EOF
+  - chmod 600 /opt/couchbase-capella-kafka-demo/.env
+
+  # 5. Start Docker services and register connectors
+  - chmod +x /opt/couchbase-capella-kafka-demo/scripts/setup-connectors.sh
+  - |
+    cd /opt/couchbase-capella-kafka-demo
+    docker compose --env-file .env -f app/docker-compose.yml up -d --build 2>&1 | tee /var/log/cb-demo-compose.log
+  - /opt/couchbase-capella-kafka-demo/scripts/setup-connectors.sh > /var/log/cb-connector-setup.log 2>&1
+
+  # 6. Signal Success
+  - echo "Cloud-init configuration completed successfully!" > /var/log/cb-demo-init.log
+
