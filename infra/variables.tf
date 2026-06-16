@@ -187,4 +187,5 @@ variable "generator_incident_id" {
 variable "generator_random_seed" {
   type        = string
   description = "Optional random seed for repeatable generated data."
-  default     =
+  default     = ""
+}
