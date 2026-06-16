@@ -32,7 +32,7 @@ Or on macOS/Linux:
 ./deploy.sh
 ```
 
-5. Wait for the VM to finish bootstrapping.
+5. Wait for the VM to finish bootstrapping. This may take 5-10 minutes.
 6. Open:
    - Demo UI: `http://<VM_PUBLIC_IP>:3000`
    - Redpanda Console: `http://<VM_PUBLIC_IP>:8080`
