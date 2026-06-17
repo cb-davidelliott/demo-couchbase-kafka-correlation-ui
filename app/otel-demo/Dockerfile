@@ -1,15 +1,10 @@
-FROM python:3.11-slim
+FROM python:3.11.9-slim-bookworm
 
 WORKDIR /app
 
-# Install Flask and OpenTelemetry packages
-RUN pip install --no-cache-dir \
-    flask \
-    requests \
-    opentelemetry-api \
-    opentelemetry-sdk \
-    opentelemetry-instrumentation-flask \
-    opentelemetry-exporter-otlp
+# Install runtime dependencies from pinned requirements.
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY main.py .
 
