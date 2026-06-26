@@ -45,11 +45,13 @@ resource "couchbase-capella_cluster" "demo" {
 }
 
 resource "random_password" "db_password" {
-  length      = 20
-  special     = false
-  min_upper   = 2
-  min_lower   = 2
-  min_numeric = 2
+  length           = 20
+  special          = true
+  override_special = "@"
+  min_upper        = 2
+  min_lower        = 2
+  min_numeric      = 2
+  min_special      = 1
 }
 
 resource "couchbase-capella_bucket" "demo" {
