@@ -68,9 +68,9 @@ log_info "Validating Terraform configuration..."
 terraform validate
 
 log_info "Applying Terraform configuration..."
-# Pass variables from .env to Terraform using TF_VAR_ env vars
-for required in COUCHBASE_CONN_STR COUCHBASE_USERNAME COUCHBASE_PASSWORD; do
-    if [ -z "${!required:-}" ]; then
+for required in CAPELLA_AUTH_TOKEN CAPELLA_ORGANIZATION_ID CAPELLA_PROJECT_ID; do
+    eval "val=\${$required:-}"
+    if [ -z "$val" ]; then
         log_error "$required is required for deployment."
     fi
 done
@@ -81,18 +81,13 @@ export TF_VAR_prefix="${RESOURCE_PREFIX:-cb-otel-demo}"
 export TF_VAR_vm_size="${AZURE_VM_SIZE:-Standard_D4s_v5}"
 export TF_VAR_admin_username="${VM_ADMIN_USERNAME:-azureuser}"
 export TF_VAR_github_repo_url="${GITHUB_REPO_URL:-}"
-export TF_VAR_couchbase_conn_str="${COUCHBASE_CONN_STR:-}"
-COUCHBASE_SEED_NODES_DERIVED="${COUCHBASE_SEED_NODES:-}"
-if [ -z "$COUCHBASE_SEED_NODES_DERIVED" ]; then
-    COUCHBASE_SEED_NODES_DERIVED="${COUCHBASE_CONN_STR#couchbases://}"
-    COUCHBASE_SEED_NODES_DERIVED="${COUCHBASE_SEED_NODES_DERIVED#couchbase://}"
-    COUCHBASE_SEED_NODES_DERIVED="${COUCHBASE_SEED_NODES_DERIVED%%/*}"
-fi
-export TF_VAR_couchbase_seed_nodes="$COUCHBASE_SEED_NODES_DERIVED"
-export TF_VAR_couchbase_username="${COUCHBASE_USERNAME:-}"
-export TF_VAR_couchbase_password="${COUCHBASE_PASSWORD:-}"
+export TF_VAR_capella_auth_token="${CAPELLA_AUTH_TOKEN:-}"
+export TF_VAR_capella_organization_id="${CAPELLA_ORGANIZATION_ID:-}"
+export TF_VAR_capella_project_id="${CAPELLA_PROJECT_ID:-}"
+export TF_VAR_capella_cluster_region="${CAPELLA_CLUSTER_REGION:-eastus}"
 export TF_VAR_couchbase_bucket="${COUCHBASE_BUCKET:-demo}"
 export TF_VAR_couchbase_scope="${COUCHBASE_SCOPE:-app360}"
+export TF_VAR_demo_preferred_incident_id="${DEMO_PREFERRED_INCIDENT_ID:-INC-DEMO-001}"
 export TF_VAR_generator_profile="${GENERATOR_PROFILE:-demo}"
 export TF_VAR_generator_interval_seconds="${GENERATOR_INTERVAL_SECONDS:-5.0}"
 export TF_VAR_generator_events_per_batch="${GENERATOR_EVENTS_PER_BATCH:-1}"
@@ -113,6 +108,7 @@ export TF_VAR_generator_enterprise_account_count="${GENERATOR_ENTERPRISE_ACCOUNT
 export TF_VAR_generator_scenario="${GENERATOR_SCENARIO:-payment_outage}"
 export TF_VAR_generator_incident_id="${GENERATOR_INCIDENT_ID:-}"
 export TF_VAR_generator_random_seed="${GENERATOR_RANDOM_SEED:-}"
+export TF_VAR_generator_max_active_customers="${GENERATOR_MAX_ACTIVE_CUSTOMERS:-500}"
 
 
 terraform apply -auto-approve
@@ -134,7 +130,8 @@ echo " SSH: ssh -i \"$KEY_PATH\" ${TF_VAR_admin_username}@$VM_IP"
 echo " Redpanda Console: http://$VM_IP:8080"
 echo " Demo UI: http://$VM_IP:3000"
 echo "---------------------------------------------------------"
-echo "Wait a few minutes for cloud-init to finish configuring the VM."
+echo "NOTE: First deploy takes ~20 minutes — Terraform is creating the Capella cluster."
+echo "Wait until cloud-init finishes before opening the Demo UI."
 echo "Startup logs:"
 echo " ssh -i \"$KEY_PATH\" ${TF_VAR_admin_username}@$VM_IP \"sudo tail -120 /var/log/cloud-init-output.log\""
 echo " ssh -i \"$KEY_PATH\" ${TF_VAR_admin_username}@$VM_IP \"sudo tail -120 /var/log/cb-demo-compose.log\""

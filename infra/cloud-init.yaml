@@ -35,6 +35,7 @@ runcmd:
     COUCHBASE_PASSWORD="${couchbase_password}"
     COUCHBASE_BUCKET="${couchbase_bucket}"
     COUCHBASE_SCOPE="${couchbase_scope}"
+    DEMO_PREFERRED_INCIDENT_ID="${demo_preferred_incident_id}"
     GENERATOR_PROFILE="${generator_profile}"
     GENERATOR_INTERVAL_SECONDS="${generator_interval_seconds}"
     GENERATOR_EVENTS_PER_BATCH="${generator_events_per_batch}"
@@ -55,6 +56,7 @@ runcmd:
     GENERATOR_SCENARIO="${generator_scenario}"
     GENERATOR_INCIDENT_ID="${generator_incident_id}"
     GENERATOR_RANDOM_SEED="${generator_random_seed}"
+    GENERATOR_MAX_ACTIVE_CUSTOMERS="${generator_max_active_customers}"
     EOF
   - chmod 600 /opt/couchbase-capella-kafka-demo/.env
 

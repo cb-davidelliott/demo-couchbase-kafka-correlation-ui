@@ -39,9 +39,9 @@ git --version
 You also need:
 
 - An Azure subscription with quota for the VM size in `.env`.
-- A Couchbase Capella cluster with the demo bucket, scope, and collections created.
-- A database user with read/write access to the demo bucket.
-- A GitHub repository URL that the VM can clone (if you fork this repo. Otherwise use this repo). For simplest testing, make the repo public while deploying.
+- A Couchbase Capella organization and project (Terraform creates the cluster automatically).
+- A Capella API v4 personal access token (create one in Capella UI under **Settings > API Keys**).
+- A GitHub repository URL that the VM can clone (if you fork this repo, otherwise use this repo). For simplest testing, make the repo public while deploying.
 
 ## Configure
 
@@ -92,40 +92,13 @@ Required values:
 - `AZURE_LOCATION`
 - `AZURE_VM_SIZE`
 - `GITHUB_REPO_URL`
-- `COUCHBASE_CONN_STR`
-- `COUCHBASE_USERNAME`
-- `COUCHBASE_PASSWORD`
-- `COUCHBASE_BUCKET`
-- `COUCHBASE_SCOPE`
+- `CAPELLA_AUTH_TOKEN` — Capella API v4 personal access token
+- `CAPELLA_ORGANIZATION_ID` — visible in any Capella URL after `/organizations/`
+- `CAPELLA_PROJECT_ID` — visible in the Capella project URL
+
+Terraform creates the Capella cluster, bucket, scope, collections, and database credentials automatically. No manual Capella setup is required.
 
 Load and scenario settings live in `.env.example`. Prefer changing that file/template instead of hard-coding settings in docs.
-
-## Prepare Capella Schema
-
-Create the bucket, scope, and collections before deploying. 
-
-Use the Capella UI to create a bucket named `demo`. 
-
-After the bucket is online, in the Capella Query Editor, run:
-
-```sql
-CREATE SCOPE `demo`.`app360` IF NOT EXISTS;
-
-CREATE COLLECTION `demo`.`app360`.`logs` IF NOT EXISTS;
-CREATE COLLECTION `demo`.`app360`.`traces` IF NOT EXISTS;
-CREATE COLLECTION `demo`.`app360`.`metrics` IF NOT EXISTS;
-CREATE COLLECTION `demo`.`app360`.`customers` IF NOT EXISTS;
-CREATE COLLECTION `demo`.`app360`.`orders` IF NOT EXISTS;
-CREATE COLLECTION `demo`.`app360`.`support_tickets` IF NOT EXISTS;
-CREATE COLLECTION `demo`.`app360`.`accounts` IF NOT EXISTS;
-CREATE COLLECTION `demo`.`app360`.`services` IF NOT EXISTS;
-CREATE COLLECTION `demo`.`app360`.`incidents` IF NOT EXISTS;
-CREATE COLLECTION `demo`.`app360`.`payments` IF NOT EXISTS;
-CREATE COLLECTION `demo`.`app360`.`shipments` IF NOT EXISTS;
-CREATE COLLECTION `demo`.`app360`.`deployments` IF NOT EXISTS;
-```
-
-The demo UI creates targeted SQL++ indexes at startup. Do not use a primary index as the normal setup path.
 
 ## Deploy
 
@@ -141,7 +114,7 @@ macOS/Linux:
 ./deploy.sh
 ```
 
-The deployment creates Azure infrastructure, writes a VM SSH key, runs cloud-init, clones the repo on the VM, starts Docker Compose, and registers the Couchbase Kafka connector.
+The deployment creates the Capella cluster (~15 min), Azure infrastructure, writes a VM SSH key, runs cloud-init, clones the repo on the VM, starts Docker Compose, and registers the Couchbase Kafka connector. **First deploy takes approximately 20 minutes.**
 
 When the script finishes, keep the public IP it prints.
 
@@ -310,9 +283,8 @@ sudo docker logs kafka-connect --tail=120
 
 Common causes:
 
-- Capella IP access list does not allow the VM.
-- Couchbase username/password or bucket/scope values are wrong.
-- The bucket, scope, or collections do not exist.
+- Capella cluster or allowedCIDR not yet ready (check `terraform output couchbase_connection_string`).
+- Couchbase credentials or bucket/scope values are wrong (check `terraform output couchbase_username`).
 - The GitHub repo is not accessible from the VM.
 - The VM is temporarily resource constrained while Docker images build or containers start.
 
@@ -330,4 +302,4 @@ Or:
 ./destroy.sh
 ```
 
-If Capella resources are managed separately, destroying the Azure VM does not delete the Capella cluster.
+The destroy script removes both Azure resources and the Capella cluster (it was created by Terraform, so it is destroyed by Terraform).

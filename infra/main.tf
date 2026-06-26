@@ -133,12 +133,13 @@ resource "azurerm_linux_virtual_machine" "vm" {
   custom_data = base64encode(templatefile("${path.module}/cloud-init.yaml", {
     admin_username                           = var.admin_username
     github_repo_url                          = var.github_repo_url
-    couchbase_conn_str                       = var.couchbase_conn_str
-    couchbase_seed_nodes                     = var.couchbase_seed_nodes
-    couchbase_username                       = var.couchbase_username
-    couchbase_password                       = var.couchbase_password
+    couchbase_conn_str                       = couchbase-capella_cluster.demo.connection_string
+    couchbase_seed_nodes                     = couchbase-capella_cluster.demo.connection_string
+    couchbase_username                       = couchbase-capella_database_credential.demo_user.name
+    couchbase_password                       = random_password.db_password.result
     couchbase_bucket                         = var.couchbase_bucket
     couchbase_scope                          = var.couchbase_scope
+    demo_preferred_incident_id               = var.demo_preferred_incident_id
     generator_profile                        = var.generator_profile
     generator_interval_seconds               = var.generator_interval_seconds
     generator_events_per_batch               = var.generator_events_per_batch
@@ -159,5 +160,6 @@ resource "azurerm_linux_virtual_machine" "vm" {
     generator_scenario                       = var.generator_scenario
     generator_incident_id                    = var.generator_incident_id
     generator_random_seed                    = var.generator_random_seed
+    generator_max_active_customers           = var.generator_max_active_customers
   }))
 }

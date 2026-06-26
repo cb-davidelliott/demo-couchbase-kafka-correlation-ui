@@ -34,6 +34,7 @@ export TF_VAR_location="${AZURE_LOCATION:-eastus}"
 export TF_VAR_prefix="${RESOURCE_PREFIX:-cb-otel-demo}"
 export TF_VAR_vm_size="${AZURE_VM_SIZE:-Standard_D4s_v5}"
 export TF_VAR_admin_username="${VM_ADMIN_USERNAME:-azureuser}"
+export TF_VAR_capella_auth_token="${CAPELLA_AUTH_TOKEN:-}"
 
 terraform destroy -auto-approve
 log_success "Demo infrastructure has been successfully destroyed!"

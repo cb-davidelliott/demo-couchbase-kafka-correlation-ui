@@ -35,11 +35,12 @@ if (-not $azAccount) {
 Write-Info "Running Terraform Destroy..."
 Push-Location (Join-Path $PSScriptRoot "infra")
 
-$env:TF_VAR_subscription_id = $envVars["AZURE_SUBSCRIPTION_ID"]
-$env:TF_VAR_location = $envVars["AZURE_LOCATION"]
-$env:TF_VAR_prefix = $envVars["RESOURCE_PREFIX"]
-$env:TF_VAR_vm_size = $envVars["AZURE_VM_SIZE"]
-$env:TF_VAR_admin_username = $envVars["VM_ADMIN_USERNAME"]
+$env:TF_VAR_subscription_id    = $envVars["AZURE_SUBSCRIPTION_ID"]
+$env:TF_VAR_location           = $envVars["AZURE_LOCATION"]
+$env:TF_VAR_prefix             = $envVars["RESOURCE_PREFIX"]
+$env:TF_VAR_vm_size            = $envVars["AZURE_VM_SIZE"]
+$env:TF_VAR_admin_username     = $envVars["VM_ADMIN_USERNAME"]
+$env:TF_VAR_capella_auth_token = $envVars["CAPELLA_AUTH_TOKEN"]
 
 terraform destroy -auto-approve
 Write-Success "Demo infrastructure has been successfully destroyed!"

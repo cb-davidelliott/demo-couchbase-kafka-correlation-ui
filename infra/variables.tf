@@ -33,30 +33,35 @@ variable "github_repo_url" {
   default     = "https://github.com/cb-davidelliott/demo-couchbase-kafka-correlation-ui.git"
 }
 
-variable "couchbase_conn_str" {
-  type        = string
-  description = "Couchbase Capella connection string."
-  default     = ""
-}
+# ------------------------------------------------------------------------------
+# Couchbase Capella Management API
+# ------------------------------------------------------------------------------
 
-variable "couchbase_seed_nodes" {
+variable "capella_auth_token" {
   type        = string
-  description = "Couchbase seed node hostnames for the Kafka connector."
-  default     = ""
-}
-
-variable "couchbase_username" {
-  type        = string
-  description = "Couchbase Capella database username."
-  default     = ""
-}
-
-variable "couchbase_password" {
-  type        = string
-  description = "Couchbase Capella database password."
+  description = "Couchbase Capella API v4 personal access token. Create one in Capella UI under Settings > API Keys."
   sensitive   = true
-  default     = ""
 }
+
+variable "capella_organization_id" {
+  type        = string
+  description = "Couchbase Capella organization ID. Found in the Capella URL: cloud.couchbase.com/organizations/{id}/..."
+}
+
+variable "capella_project_id" {
+  type        = string
+  description = "Couchbase Capella project ID. Found in the Capella project URL."
+}
+
+variable "capella_cluster_region" {
+  type        = string
+  description = "Azure region for the Capella cluster. Must be a Capella-supported Azure region (e.g. eastus, westeurope, australiaeast)."
+  default     = "eastus"
+}
+
+# ------------------------------------------------------------------------------
+# Couchbase Schema (optional overrides — defaults are fine for the demo)
+# ------------------------------------------------------------------------------
 
 variable "couchbase_bucket" {
   type        = string
@@ -70,16 +75,30 @@ variable "couchbase_scope" {
   default     = "app360"
 }
 
-variable "generator_interval_seconds" {
+# ------------------------------------------------------------------------------
+# Demo UI
+# ------------------------------------------------------------------------------
+
+variable "demo_preferred_incident_id" {
   type        = string
-  description = "Seconds to sleep between event generator batches."
-  default     = "5.0"
+  description = "Incident ID the UI auto-selects on load. Set to match GENERATOR_INCIDENT_ID."
+  default     = "INC-DEMO-001"
 }
+
+# ------------------------------------------------------------------------------
+# Event Generator
+# ------------------------------------------------------------------------------
 
 variable "generator_profile" {
   type        = string
   description = "Event generator profile: demo or load."
   default     = "demo"
+}
+
+variable "generator_interval_seconds" {
+  type        = string
+  description = "Seconds to sleep between event generator batches."
+  default     = "5.0"
 }
 
 variable "generator_events_per_batch" {
@@ -126,7 +145,7 @@ variable "generator_enable_incident_updates" {
 
 variable "generator_log_every_n_events" {
   type        = string
-  description = "How often the generator logs progress. Use 0 to disable progress logs."
+  description = "How often the generator logs progress."
   default     = "1"
 }
 
@@ -181,11 +200,17 @@ variable "generator_scenario" {
 variable "generator_incident_id" {
   type        = string
   description = "Optional fixed incident ID for repeatable demos."
-  default     = ""
+  default     = "INC-DEMO-001"
 }
 
 variable "generator_random_seed" {
   type        = string
   description = "Optional random seed for repeatable generated data."
   default     = ""
+}
+
+variable "generator_max_active_customers" {
+  type        = string
+  description = "Cap on the number of active customer objects held in generator memory."
+  default     = "500"
 }
