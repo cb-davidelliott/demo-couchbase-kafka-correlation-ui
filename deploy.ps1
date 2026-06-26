@@ -150,7 +150,7 @@ Write-Host " SSH: ssh -i `"$keyPath`" $($env:TF_VAR_admin_username)@$vmIp" -Fore
 Write-Host " Redpanda Console: http://$($vmIp):8080" -ForegroundColor Green
 Write-Host " Demo UI: http://$($vmIp):3000" -ForegroundColor Green
 Write-Host "---------------------------------------------------------" -ForegroundColor Green
-Write-Host "NOTE: First deploy takes ~20 minutes — Terraform is creating the Capella cluster."
+Write-Host "NOTE: First deploy takes ~20 minutes - Terraform is creating the Capella cluster."
 Write-Host "Wait until cloud-init finishes before opening the Demo UI."
 Write-Host "Startup logs:" -ForegroundColor Cyan
 Write-Host " ssh -i `"$keyPath`" $($env:TF_VAR_admin_username)@$vmIp `"sudo tail -120 /var/log/cloud-init-output.log`"" -ForegroundColor Cyan
