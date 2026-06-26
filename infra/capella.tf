@@ -28,7 +28,6 @@ resource "couchbase-capella_cluster" "demo" {
         disk = {
           storage = 64
           type    = "P6"
-          iops    = 240
         }
       }
       num_of_nodes = 3
