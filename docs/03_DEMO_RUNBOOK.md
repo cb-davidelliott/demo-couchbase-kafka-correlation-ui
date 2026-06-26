@@ -5,15 +5,15 @@ This runbook is the short presenter path for the enterprise incident investigati
 ## Pre-Demo Readiness
 
 1. Deploy the VM and open the UI at `http://<VM_PUBLIC_IP>:3000`.
-2. For the strongest default story, use the payment outage scenario:
+2. The default `.env` values already use the payment outage scenario — no changes needed for a standard demo. If you customized the scenario before deploying, confirm these match in the VM's `.env`:
 
-```bash
+```
 GENERATOR_SCENARIO="payment_outage"
 GENERATOR_INCIDENT_ID="INC-DEMO-001"
 DEMO_PREFERRED_INCIDENT_ID="INC-DEMO-001"
 ```
 
-`DEMO_PREFERRED_INCIDENT_ID` tells the UI which incident to auto-select on load. Set it to match `GENERATOR_INCIDENT_ID` so the dashboard opens on the right story without manual selection.
+`DEMO_PREFERRED_INCIDENT_ID` tells the UI which incident to auto-select on load. It should always match `GENERATOR_INCIDENT_ID`.
 
 3. Let the generator run until the UI shows incident, order, payment, account, customer, deployment, and support data.
 4. Confirm the presenter recommendations in the UI by clicking **Refresh Recommendations**.

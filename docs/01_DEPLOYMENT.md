@@ -12,9 +12,8 @@ This project is a **short-lived demo tool**, not a production or hardened deploy
 - No customer or production data should ever be loaded into this environment.
 
 Before running a customer-facing demo:
-- Use a **dedicated demo Couchbase cluster**, not a shared or production cluster.
-- Set a **strong, unique password** in `.env` — do not reuse the example value.
-- Run `destroy.sh` / `destroy.ps1` as soon as the demo concludes to remove the VM and SSH keys.
+- Use a **dedicated Couchbase Capella project**, not a shared or production one.
+- Run `destroy.sh` / `destroy.ps1` as soon as the demo concludes — this removes both the Azure VM and the Capella cluster.
 
 The current source of truth for settings is `.env.example`; this document describes the flow without duplicating every variable.
 
@@ -124,7 +123,10 @@ Open:
 
 - Demo UI: `http://<VM_PUBLIC_IP>:3000`
 - Redpanda Console: `http://<VM_PUBLIC_IP>:8080`
-- Kafka Connect REST: `http://<VM_PUBLIC_IP>:8083`
+
+Kafka Connect (8083) is internal — use SSH port forwarding to reach it: `ssh -L 8083:localhost:8083 -i <key.pem> azureuser@<VM_IP>`.
+
+On a fresh deploy the UI may show a **"planning failure"** banner for 2-3 minutes while indexes build and the first events flow in. This clears on its own — refresh the page once the incident list appears.
 
 Run validation from your local repo:
 

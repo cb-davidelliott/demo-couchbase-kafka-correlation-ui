@@ -43,7 +43,9 @@ Check:
 
 If the UI is sparse, wait 60 to 90 seconds and click **Refresh Recommendations**.
 
-If the UI loads but shows a database connection error, wait 30 seconds — the server runs a heartbeat that reconnects automatically if the Couchbase connection drops. A UI restart is not required for transient connectivity issues.
+If the UI shows a **"planning failure"** banner on a fresh deploy, wait 2-3 minutes and refresh. This is normal — indexes build in the background after the server connects, and the first queries may run before they are ready.
+
+If the UI loads but shows a database connection error, wait 30 seconds — the server runs a heartbeat that reconnects automatically. A UI restart is not required for transient connectivity issues.
 
 ## 3. Operator Query Checks
 
@@ -78,7 +80,7 @@ Add `-RunSamples` when you also want a few small bounded executions:
 
 The script uses `EXPLAIN` for the main UI/API query shapes, discovers sample IDs from the cluster, and prints a compact pass/fail report. A missing index usually appears as `No index available on keyspace`.
 
-## 5. VM-Level Checks
+## 5. VM-Level Checks (SSH required)
 
 SSH to the VM only if the UI or validation script shows a problem.
 
@@ -106,7 +108,7 @@ Kafka topics:
 sudo docker exec redpanda rpk topic list
 ```
 
-## 5. Trace And Log Checks
+## 6. Trace And Log Checks
 
 Trace/log data is optional for the business story but useful for the final drill-in.
 
@@ -125,7 +127,7 @@ sudo docker exec redpanda rpk topic consume traces --num 1
 sudo docker exec redpanda rpk topic consume logs --num 1
 ```
 
-## 6. Load Checks
+## 7. Load Checks
 
 Load settings are controlled by `.env` and documented inline in `.env.example`.
 

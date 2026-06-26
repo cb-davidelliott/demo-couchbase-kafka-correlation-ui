@@ -5,9 +5,8 @@
 > The VM, its services, and the Couchbase cluster it connects to should be treated as ephemeral.
 >
 > Before running a customer-facing demo:
-> - Use a dedicated Couchbase demo cluster, not a shared or production cluster.
-> - Set a strong, unique password in `.env` — do not use the example value.
-> - Run `destroy.sh` / `destroy.ps1` as soon as the demo is complete.
+> - Use a dedicated Couchbase Capella project, not a shared or production one.
+> - Run `destroy.sh` / `destroy.ps1` as soon as the demo is complete — this removes both the Azure VM and the Capella cluster.
 >
 > See [docs/01_DEPLOYMENT.md](docs/01_DEPLOYMENT.md) for the full security posture note.
 
@@ -18,9 +17,8 @@ Business, support, payment, shipment, deployment, trace, log, and metric events 
 ## Quick Start
 
 1. Copy `.env.example` to `.env`.
-2. Fill in Azure, Couchbase Capella, and GitHub repository values.
-3. Create the Capella bucket/scope/collections from [docs/01_DEPLOYMENT.md](docs/01_DEPLOYMENT.md).
-4. Deploy:
+2. Fill in `AZURE_SUBSCRIPTION_ID`, `CAPELLA_AUTH_TOKEN`, `CAPELLA_ORGANIZATION_ID`, and `CAPELLA_PROJECT_ID`. Everything else has working defaults.
+3. Deploy:
 
 ```powershell
 .\deploy.ps1
@@ -32,11 +30,10 @@ Or on macOS/Linux:
 ./deploy.sh
 ```
 
-5. Wait for the VM to finish bootstrapping. This may take 5-10 minutes.
-6. Open:
+4. Wait ~20 minutes. The first deploy creates the Capella cluster, then provisions the Azure VM.
+5. Open:
    - Demo UI: `http://<VM_PUBLIC_IP>:3000`
    - Redpanda Console: `http://<VM_PUBLIC_IP>:8080`
-   - Kafka Connect REST: `http://<VM_PUBLIC_IP>:8083`
 
 For the full deployment path, use [docs/01_DEPLOYMENT.md](docs/01_DEPLOYMENT.md).
 
@@ -114,7 +111,7 @@ cd /opt/couchbase-capella-kafka-demo
 sudo ./scripts/refresh-vm.sh all
 ```
 
-Destroy Azure resources:
+Destroy all resources (Azure VM + Capella cluster):
 
 ```powershell
 .\destroy.ps1
