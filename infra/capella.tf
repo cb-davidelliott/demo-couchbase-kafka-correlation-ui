@@ -115,7 +115,7 @@ resource "couchbase-capella_database_credential" "demo_user" {
   ]
 }
 
-resource "couchbase-capella_allowedcidr" "vm_ip" {
+resource "couchbase-capella_allowlist" "vm_ip" {
   organization_id = var.capella_organization_id
   project_id      = var.capella_project_id
   cluster_id      = couchbase-capella_cluster.demo.id
