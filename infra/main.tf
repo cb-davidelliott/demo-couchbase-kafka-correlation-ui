@@ -133,7 +133,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
   custom_data = base64encode(templatefile("${path.module}/cloud-init.yaml", {
     admin_username                           = var.admin_username
     github_repo_url                          = var.github_repo_url
-    couchbase_conn_str                       = couchbase-capella_cluster.demo.connection_string
+    couchbase_conn_str                       = "couchbases://${couchbase-capella_cluster.demo.connection_string}"
     couchbase_seed_nodes                     = couchbase-capella_cluster.demo.connection_string
     couchbase_username                       = couchbase-capella_database_credential.demo_user.name
     couchbase_password                       = random_password.db_password.result
