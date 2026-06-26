@@ -16,8 +16,46 @@ const password = process.env.COUCHBASE_PASSWORD;
 const bucketName = process.env.COUCHBASE_BUCKET || 'demo';
 const scopeName = process.env.COUCHBASE_SCOPE || 'app360';
 const indexTimeoutMs = Number(process.env.COUCHBASE_INDEX_TIMEOUT_MS || 600000);
+const preferredIncidentId = process.env.DEMO_PREFERRED_INCIDENT_ID || '';
 
 let cluster = null;
+let reconnecting = false;
+
+function isConnectionError(err) {
+  const msg = (err.message || '').toLowerCase();
+  const name = (err.name || '').toLowerCase();
+  return (
+    msg.includes('socket') ||
+    msg.includes('econnrefused') ||
+    msg.includes('enotfound') ||
+    name.includes('network') ||
+    name.includes('timeout') ||
+    err.code === 13 || err.code === 14
+  );
+}
+
+async function reconnect() {
+  if (reconnecting) return;
+  reconnecting = true;
+  cluster = null;
+  for (let i = 1; i <= 3; i++) {
+    try {
+      console.log(`[INFO] Reconnect attempt ${i}/3 to Couchbase...`);
+      cluster = await couchbase.connect(connStr, {
+        username,
+        password,
+        timeouts: { kvTimeout: 10000, queryTimeout: 30000 }
+      });
+      console.log('[INFO] Reconnect successful.');
+      break;
+    } catch (err) {
+      console.warn(`[WARN] Reconnect attempt ${i} failed: ${err.message}`);
+      if (i < 3) await new Promise(r => setTimeout(r, 2000 * i));
+    }
+  }
+  if (!cluster) console.error('[ERROR] All reconnect attempts failed. Queries unavailable until next heartbeat.');
+  reconnecting = false;
+}
 
 async function ensureQueryIndexes() {
   if (process.env.ENSURE_COUCHBASE_INDEXES === 'false') {
@@ -100,6 +138,19 @@ async function connectDb() {
 
 connectDb();
 
+setInterval(async () => {
+  if (!cluster) {
+    if (!reconnecting && connStr) await reconnect();
+    return;
+  }
+  try {
+    await cluster.query('SELECT 1', { timeout: 5000 });
+  } catch (err) {
+    console.warn(`[WARN] Heartbeat query failed (${err.message}), reconnecting...`);
+    await reconnect();
+  }
+}, 30000);
+
 // Middleware to serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
@@ -109,8 +160,19 @@ async function runQuery(queryText, params = {}) {
   if (!cluster) {
     throw new Error('Database connection is not initialized.');
   }
-  const result = await cluster.query(queryText, { parameters: params });
-  return result.rows;
+  try {
+    const result = await cluster.query(queryText, { parameters: params });
+    return result.rows;
+  } catch (err) {
+    if (isConnectionError(err)) {
+      console.warn(`[WARN] Query failed with connection error (${err.message}), attempting reconnect...`);
+      await reconnect();
+      if (!cluster) throw err;
+      const result = await cluster.query(queryText, { parameters: params });
+      return result.rows;
+    }
+    throw err;
+  }
 }
 
 async function runQueryOrEmpty(label, queryText, params = {}) {
@@ -1231,14 +1293,14 @@ app.get('/api/demo/best-records', async (req, res) => {
       FROM \`${bucketName}\`.\`${scopeName}\`.incidents i
       WHERE i.startedAt IS NOT MISSING
       ORDER BY CASE WHEN IFMISSINGORNULL(i.affectedOrderCount, 0) > 0 THEN 0 ELSE 1 END,
-               CASE WHEN i.incidentId = "INC-DEMO-001" THEN 0 ELSE 1 END,
+               CASE WHEN $preferredId != '' AND i.incidentId = $preferredId THEN 0 ELSE 1 END,
                IFMISSINGORNULL(i.affectedOrderCount, 0) DESC,
                IFMISSINGORNULL(i.actualRevenueAtRisk, IFMISSINGORNULL(i.estimatedRevenueImpact, 0)) DESC,
                i.startedAt DESC
       LIMIT 1
     `;
 
-    const incident = firstRow(await runQueryOrEmpty('best records incident', incidentQuery), null);
+    const incident = firstRow(await runQueryOrEmpty('best records incident', incidentQuery, { preferredId: preferredIncidentId }), null);
     if (!incident) {
       return res.json({
         ready: false,
@@ -1714,6 +1776,10 @@ app.get('/api/correlation/:traceId', async (req, res) => {
     console.error('[API Error] Correlation error:', err.message);
     res.status(500).json({ error: err.message });
   }
+});
+
+app.get('/api/config', (req, res) => {
+  res.json({ preferredIncidentId: preferredIncidentId || null });
 });
 
 app.get('/api/operator/queries', (req, res) => {

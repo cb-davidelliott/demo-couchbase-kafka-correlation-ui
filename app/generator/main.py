@@ -71,6 +71,7 @@ PRODUCER_COMPRESSION = env_value("GENERATOR_PRODUCER_COMPRESSION", "lz4", "lz4")
 GENERATOR_SCENARIO = re.sub(r"[\s-]+", "_", env_value("GENERATOR_SCENARIO", "normal").strip().lower())
 GENERATOR_INCIDENT_ID = os.environ.get("GENERATOR_INCIDENT_ID", "").strip()
 GENERATOR_RANDOM_SEED = os.environ.get("GENERATOR_RANDOM_SEED", "").strip()
+GENERATOR_MAX_ACTIVE_CUSTOMERS = parse_int("GENERATOR_MAX_ACTIVE_CUSTOMERS", "500", "2000", minimum=10)
 
 try:
     ENTERPRISE_ACCOUNT_COUNT = max(10, int(env_value("GENERATOR_ENTERPRISE_ACCOUNT_COUNT", "30")))
@@ -534,6 +535,11 @@ def generate_event(producer):
         cust_id, customer_doc = generate_customer()
         active_customers.append(cust_id)
         customer_profiles[cust_id] = customer_doc
+        if len(active_customers) > GENERATOR_MAX_ACTIVE_CUSTOMERS:
+            evicted = active_customers[:-GENERATOR_MAX_ACTIVE_CUSTOMERS]
+            active_customers[:] = active_customers[-GENERATOR_MAX_ACTIVE_CUSTOMERS:]
+            for eid in evicted:
+                customer_profiles.pop(eid, None)
         produce_message(producer, "customers", cust_id, json.dumps(customer_doc))
         logger.debug(f"Created new customer: {cust_id}")
     else:

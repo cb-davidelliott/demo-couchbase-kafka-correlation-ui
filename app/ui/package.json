@@ -4,11 +4,24 @@
   "description": "Express server and React UI dashboard for Couchbase Capella + Kafka + OpenTelemetry Demo",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "vite build",
+    "dev": "vite"
   },
   "dependencies": {
     "couchbase": "4.2.4",
     "dotenv": "16.4.5",
-    "express": "4.19.2"
+    "express": "4.19.2",
+    "lucide-react": "0.468.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@fontsource/outfit": "5.2.8",
+    "@vitejs/plugin-react": "6.0.3",
+    "autoprefixer": "10.4.20",
+    "postcss": "8.4.49",
+    "tailwindcss": "3.4.17",
+    "vite": "8.1.0"
   }
 }

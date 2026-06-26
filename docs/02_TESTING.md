@@ -43,6 +43,8 @@ Check:
 
 If the UI is sparse, wait 60 to 90 seconds and click **Refresh Recommendations**.
 
+If the UI loads but shows a database connection error, wait 30 seconds — the server runs a heartbeat that reconnects automatically if the Couchbase connection drops. A UI restart is not required for transient connectivity issues.
+
 ## 3. Operator Query Checks
 
 In the UI, open **Operator** and run:
@@ -134,6 +136,7 @@ For high document growth:
 - Lower `GENERATOR_INTERVAL_SECONDS`; use `0` for continuous generation.
 - Set `GENERATOR_ENABLE_OTEL_CALLS="false"` when you want high-volume business docs.
 - Set `GENERATOR_NEW_CUSTOMER_PROBABILITY="1.0"` when you want many unique customers.
+- Set `GENERATOR_MAX_ACTIVE_CUSTOMERS` to cap the active customer pool size (default `500` in demo mode, `2000` in load mode). Lower values reduce memory use and keep the pool cycling through a smaller set of customers; higher values spread events across more unique customers.
 - Set `GENERATOR_TICKET_PROBABILITY="1.0"` when you want a ticket per event.
 - Set `GENERATOR_UNIQUE_METRIC_DOCS="true"` when you want metric document counts to grow.
 - Set `GENERATOR_LOG_EVERY_N_EVENTS` and `GENERATOR_FLUSH_EVERY_N_EVENTS` to larger values to reduce generator overhead.

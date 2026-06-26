@@ -1,22 +1,17 @@
-FROM node:18.20.4-alpine3.20
-
-# Install build dependencies for compiling native C/C++ packages like couchbase SDK (if wheels are not matching)
-RUN apk add --no-cache python3 make g++ git
-
+FROM node:22-alpine3.21 AS builder
 WORKDIR /app
+COPY package*.json ./
+RUN npm ci --ignore-scripts
+COPY . .
+RUN npm run build
 
-# Copy dependency manifests
-COPY package*.json .
-
-# Install dependencies from the lockfile
+FROM node:20-bookworm-slim AS runtime
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ git && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY package*.json ./
 RUN npm ci --omit=dev
-
-# Copy server code and public static HTML/CSS asset files
 COPY server.js .
-COPY public/ ./public/
-
+COPY --from=builder /app/dist ./public
 EXPOSE 3000
-
 ENV PORT=3000
-
 CMD ["npm", "start"]

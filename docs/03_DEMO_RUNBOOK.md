@@ -10,7 +10,10 @@ This runbook is the short presenter path for the enterprise incident investigati
 ```bash
 GENERATOR_SCENARIO="payment_outage"
 GENERATOR_INCIDENT_ID="INC-DEMO-001"
+DEMO_PREFERRED_INCIDENT_ID="INC-DEMO-001"
 ```
+
+`DEMO_PREFERRED_INCIDENT_ID` tells the UI which incident to auto-select on load. Set it to match `GENERATOR_INCIDENT_ID` so the dashboard opens on the right story without manual selection.
 
 3. Let the generator run until the UI shows incident, order, payment, account, customer, deployment, and support data.
 4. Confirm the presenter recommendations in the UI by clicking **Refresh Recommendations**.
