@@ -26,8 +26,7 @@ resource "couchbase-capella_cluster" "demo" {
           ram = 16
         }
         disk = {
-          storage = 64
-          type    = "P6"
+          type = "P6"
         }
       }
       num_of_nodes = 3
